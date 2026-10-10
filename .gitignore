@@ -1,2 +1,3 @@
 papers/*.pdf
 papers/txt/*.txt
+results/features.npz
