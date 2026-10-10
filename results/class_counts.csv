@@ -1,0 +1,11 @@
+class,train,test
+Normal,56000,37000
+Generic,40000,18871
+Exploits,33393,11132
+Fuzzers,18184,6062
+DoS,12264,4089
+Reconnaissance,10491,3496
+Analysis,2000,677
+Backdoor,1746,583
+Shellcode,1133,378
+Worms,130,44

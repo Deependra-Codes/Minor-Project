@@ -1,0 +1,15 @@
+task,model,labels_used,eval_rows,variant,accuracy,macro_f1,weighted_f1,detection_rate,false_alarm_rate
+binary,XGBoost,1000,81332,base,0.8781,0.8723,0.8753,0.9831,0.2531
+binary,XGBoost,1000,81332,+prior shift,0.8851,0.8801,0.8828,0.9800,0.2335
+binary,XGBoost,1000,81332,+class bias,0.8781,0.8723,0.8753,0.9831,0.2531
+binary,XGBoost,1000,81332,+prior shift +class bias,0.8851,0.8801,0.8828,0.9800,0.2335
+binary,XGBoost,1000,81332,+feedback,0.9134,0.9103,0.9122,0.9896,0.1818
+binary,XGBoost,1000,81332,+feedback +prior shift,0.9126,0.9094,0.9113,0.9899,0.1841
+binary,XGBoost,1000,81332,+feedback +prior shift +class bias,0.9126,0.9094,0.9113,0.9899,0.1841
+multiclass,XGBoost,1000,81332,base,0.7675,0.5058,0.7842,0.9720,0.2394
+multiclass,XGBoost,1000,81332,+prior shift,0.7789,0.5094,0.7918,0.9645,0.2067
+multiclass,XGBoost,1000,81332,+class bias,0.7510,0.5438,0.7888,0.9701,0.2556
+multiclass,XGBoost,1000,81332,+prior shift +class bias,0.7627,0.5461,0.7965,0.9624,0.2220
+multiclass,XGBoost,1000,81332,+feedback,0.8003,0.5250,0.8109,0.9850,0.1927
+multiclass,XGBoost,1000,81332,+feedback +prior shift,0.8095,0.5281,0.8174,0.9803,0.1678
+multiclass,XGBoost,1000,81332,+feedback +prior shift +class bias,0.7940,0.5754,0.8242,0.9794,0.1843

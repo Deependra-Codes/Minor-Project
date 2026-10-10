@@ -1,385 +1,321 @@
-# Slide Brief: Synopsis Presentation (v2)
+# Slide Content: Minor Project Presentation
 
-Give this whole file to the slide-making AI.
+Content only. Each slide lists the exact text, the figure to place, and speaker notes. Layout, colours and fonts are left to whoever designs the deck.
 
-## Rules for the slide AI
-
-1. Use every **On slide** line **verbatim**. Do not paraphrase. Do not add bullets, numbers, emojis or filler.
-2. Follow the **Design system** exactly. Each slide has one visual anchor, described under **Visual**.
-3. Put each **Speaker notes** block into that slide's notes field.
-4. Slides 11 and 12 are **result frames**. Draw the empty table grid and chart area with the label *"Inserted from results/ after the run"*. Do not fill in numbers.
-5. 16 slides, no more and no fewer.
-6. **Images:** use only the figures in `docs/assets/` (and `results/` for slides 11–12). No stock photos and no AI-generated pictures: they read as filler to an examiner.
-
----
-
-## Design system
-
-**Canvas.** 16:9 (13.33 × 7.5 in), 0.6 in margins, 12-column grid. Everything aligns to the grid.
-
-**Type.**
-
-| Role | Font | Size |
-|---|---|---|
-| Kicker (label above title) | Inter SemiBold, ALL CAPS, letter-spacing 1.5 pt, Blue | 12 pt |
-| Slide title (a full-sentence takeaway) | Montserrat SemiBold, Navy | 28 pt |
-| Body | Inter Regular, Ink | 18 pt |
-| Tables | Inter, tabular figures | 14 pt |
-| Captions, footer, sources | Inter, Muted | 10 pt |
-
-Use Calibri if Inter or Montserrat is missing. Nothing goes below 10 pt.
-
-**Color.**
-
-| Token | Hex | Use |
-|---|---|---|
-| Navy | `#0B1F3A` | Title and closing backgrounds, titles, diagram outlines |
-| Blue | `#2A78D6` | Main accent: key numbers, chart bars, pipeline boxes |
-| Orange | `#EB6834` | **Reserved for rare attacks and the problem.** At most once per slide |
-| Ink | `#1F1F1E` | Body text |
-| Muted | `#6B6A64` | Captions, footer, axis labels |
-| Line | `#E4E3DF` | Dividers, table rules, chart grid |
-| Surface | `#F5F7FA` | Card fill |
-| White | `#FFFFFF` | Content slide background |
-
-**Components.**
-- **Card:** Surface fill, 8 px corner radius, 0.25 in padding, no shadow, no border.
-- **Table:** bold Navy header on Surface, 1 px Line row dividers, no vertical lines, numbers right-aligned.
-- **Chart:** flat, no 3D, no gradients, no shadows. Axis and grid in Line, direct value labels, no legend box when labels suffice.
-- **Icons:** one outline set (Lucide or Phosphor), 1.5 px stroke, Navy. At most 4 per slide.
-- **Footer** (content slides): left "IIIT Ranchi · CSE · Minor Project 2026", right "n / 16", Muted 10 pt.
-- **Bullets:** at most 4 per slide, no trailing full stops, never two lines of the same idea.
-
-**Avoid:** clip-art, stock photos, WordArt, drop shadows, gradients, animated transitions (a simple fade is fine), centred body text.
+Every number here comes from `results/*.csv`, produced by `python -m ids.run` on the official UNSW-NB15 split. Figures are in `results/` and `docs/assets/`.
 
 ---
 
 ## Slide 1: Title
 
-**Layout:** background image `docs/assets/title_background.png`, full-bleed (a faint network on the right; three orange nodes stand for the rare attacks). Text left-aligned on the left 7 columns. A thin vertical Blue rule beside the title.
-
-**On slide**
-- Kicker: MINOR PROJECT · SYNOPSIS
-- Title: Feature Selection for Network Intrusion Detection
-- Subtitle: Fewer features, full detection, evaluated on the official UNSW-NB15 split
-- Department of Computer Science & Engineering, IIIT Ranchi
+- **Title:** Shift-Aware Network Intrusion Detection
+- **Subtitle:** Feature selection, label-free adaptation and analyst feedback on the official UNSW-NB15 split
+- Minor Project · Department of Computer Science & Engineering · IIIT Ranchi
 - Guide: Dr. Bharat Singh, Assistant Professor
 - Presented by: [Name, Roll No.] · [Name, Roll No.] · [Name, Roll No.]
-- October 2026
 
-**Speaker notes**
-Good morning. Our project asks a practical question: how little information does an intrusion detector need to do its job well, and what happens to the rarest attacks when we give it less? We study this on UNSW-NB15, a modern benchmark, using its official train and test split.
+**Speaker notes:** Our project asks why intrusion detectors that look accurate still flood analysts with false alarms, and how much of that can be fixed. We answer it on UNSW-NB15, using its official train/test split.
 
 ---
 
-## Slide 2: Motivation
+## Slide 2: The problem in two numbers
 
-**Layout:** two columns. Left (5 cols): a big-number block. Right (7 cols): three bullets.
+- **Title:** Accurate on paper, noisy in practice
+- **Big number 1:** 98.2% of attacks caught by a strong XGBoost detector
+- **Big number 2:** 26.2% of normal traffic wrongly flagged as attack by the same detector
+- **Line:** Missing all 44 Worms attacks in the test set costs only 0.05% accuracy, so accuracy hides rare attacks
 
-**Visual:** the number **0.05%** in Orange at 96 pt, caption below in Muted.
-
-**On slide**
-- Kicker: MOTIVATION
-- Title: High accuracy can hide a blind spot
-- Big number: 0.05%
-- Caption: accuracy lost by a detector that misses every Worms attack in the UNSW-NB15 test set (44 of 82,332 records)
-- Bullets:
-  - An intrusion detector must judge every network flow, in real time
-  - Machine-learning detectors learn attack patterns from labelled traffic
-  - Accuracy is dominated by common traffic, so rare attacks can vanish from view
-- Source line: Computed from the official test-set class counts
-
-**Speaker notes**
-This one number is the motivation for the whole project. A model can ignore an entire attack category and its accuracy barely moves, because that category is tiny. So a detector can look excellent on paper and still be blind to exactly the attacks that matter.
+**Speaker notes:** The detector catches almost every attack, but it also flags roughly one normal flow in four. In a real network, that buries the analyst in alerts. The second point is why we never report accuracy alone.
 
 ---
 
-## Slide 3: Problem statement and research questions
+## Slide 3: Research questions
 
-**Layout:** two Cards side by side on top (problems); three numbered rows below (questions), with RQ numbers in Blue.
+- **Title:** Five questions
+- **RQ1:** Which of the 42 flow features does a detector actually need?
+- **RQ2:** Why does a strong model still fail on the official test set?
+- **RQ3:** How much can be recovered without a single test label?
+- **RQ4:** How much does a small amount of analyst feedback add?
+- **RQ5:** Can the detector catch an attack type it has never seen?
 
-**On slide**
-- Kicker: PROBLEM STATEMENT
-- Title: Two problems, three questions
-- Card 1, heading **Feature overload**: Every flow carries 42 features. Many are redundant, and each one adds cost at detection time
-- Card 2, heading **Rare-attack blindness** (heading in Orange): Four attack types make up under 3% of the training data and are routinely misclassified
-- RQ1: How many of the 42 features does a detector actually need?
-- RQ2: Which selection method keeps detection highest: ANOVA-F, Mutual Information, or Random-Forest importance?
-- RQ3: What does feature selection do to the rarest attack classes?
-
-**Speaker notes**
-The four rare types are Analysis, Backdoor, Shellcode and Worms: 5,009 of 175,341 training records, or 2.86%. Our three research questions follow directly from these two problems, and every experiment answers one of them.
+**Speaker notes:** RQ1 is the feature-selection question. RQ2 is diagnosis. RQ3 and RQ4 are the fixes. RQ5 tests the dynamic side of intrusion detection: attacks the model was never trained on.
 
 ---
 
 ## Slide 4: Dataset
 
-**Layout:** left (5 cols) a 2 × 2 grid of stat tiles; right (7 cols) a horizontal bar chart. Footnote across the bottom.
+- **Title:** UNSW-NB15: modern attacks, an official train/test split
+- **Points:**
+  - 175,341 training flows · 82,332 test flows · 42 features per flow
+  - 9 attack types + Normal; Worms has only 130 training flows
+  - Attacks are 68.1% of the training file but 55.1% of the test file
+  - Built at the UNSW Canberra Cyber Range Lab (Moustafa & Slay, 2015)
+- **Figure:** `docs/assets/class_distribution.png`
 
-**Visual:** insert `docs/assets/class_distribution.png`. If it must be redrawn, match it: horizontal bars of training records per class, sorted descending, **log-scale** x-axis, Blue bars, the Worms bar in Orange, a value label at each bar end. Callout near the Worms bar: "Normal : Worms = 431 : 1".
-
-Chart data (training set):
-
-| Class | Records |
-|---|---:|
-| Normal | 56,000 |
-| Generic | 40,000 |
-| Exploits | 33,393 |
-| Fuzzers | 18,184 |
-| DoS | 12,264 |
-| Reconnaissance | 10,491 |
-| Analysis | 2,000 |
-| Backdoor | 1,746 |
-| Shellcode | 1,133 |
-| Worms | 130 |
-
-**On slide**
-- Kicker: DATASET
-- Title: UNSW-NB15: modern attacks, an official train/test split
-- Tile 1: **175,341** training records
-- Tile 2: **82,332** testing records
-- Tile 3: **42** flow features
-- Tile 4: **9** attack types + Normal
-- Footnote: Built at the UNSW Canberra Cyber Range Lab (Moustafa & Slay, 2015) to replace the outdated KDD'99 and NSL-KDD benchmarks
-
-**Speaker notes**
-UNSW-NB15 mixes real normal traffic with modern synthetic attacks. Its official split is harder than a random one: attacks are 68.1% of the training file but only 55.1% of the test file, so a model has to generalise, not memorise. Note the log scale: Worms has 130 records against 56,000 Normal.
+**Speaker notes:** The class mix changes between the two files. That change is a central theme of the project: a deployed detector always meets a different traffic mix than the one it was trained on.
 
 ---
 
 ## Slide 5: Literature review
 
-**Layout:** full-width table. Limitation column in Muted.
+- **Title:** Feature selection helps, but rare attacks remain unsolved
 
-**On slide**
-- Kicker: LITERATURE REVIEW
-- Title: Feature selection helps, but rare attacks remain unsolved
+| Study | Approach | Reported result |
+|---|---|---|
+| Kasongo & Sun, 2020 (J. Big Data) | XGBoost feature importance + DT, ANN, kNN, LR, SVM | Decision Tree binary accuracy 88.13% → 90.85% |
+| Yin et al., 2023 (J. Big Data) | Information gain + RF filter, then RFE with an MLP | 42 → 23 features; multiclass accuracy 82.25% → 84.24% |
+| Sarhan et al., 2021 (arXiv) | Per-class evaluation of NIDS feature sets | Worms detected 5.26% of the time (F1 0.09); Backdoor F1 0.08 |
+| Nguyen & Park, 2025 (Electronics) | Graph neural network with continual learning | 96.4% accuracy on UNSW-NB15 |
 
-| Study | Approach | Key result | Limitation |
-|---|---|---|---|
-| Kasongo & Sun, 2020 (J. Big Data) | XGBoost feature importance with DT, ANN, kNN, LR, SVM | Decision Tree binary accuracy 88.13% → 90.85% | One selection method |
-| Yin et al., 2023 (J. Big Data) | Information gain + RF filter, then RFE with an MLP | 42 → 23 features; multiclass accuracy 82.25% → 84.24% | One pipeline, tied to one classifier |
-| Sarhan et al., 2021 (arXiv) | Per-class evaluation of intrusion-detection feature sets | Worms detected 5.26% of the time (F1 0.09); Backdoor F1 0.08 | Its remedy re-extracts features as NetFlow |
-| Nguyen & Park, 2025 (Electronics) | Graph neural network with continual learning | 96.4% accuracy on UNSW-NB15 | Heavy model; needs flow-graph construction |
-
-**Speaker notes**
-Two lessons. First, feature selection works: Yin et al. cut 45% of the features and gained accuracy. Second, the rare classes are still failing: Sarhan et al. report that Worms is caught about one time in twenty. Each study also uses its own method and protocol, which brings us to the gap.
+**Speaker notes:** These studies use different preprocessing and evaluation protocols, so their numbers are not directly comparable with ours. They show two things: feature selection helps, and rare classes like Worms and Backdoor stay nearly undetected.
 
 ---
 
 ## Slide 6: Research gap
 
-**Layout:** three equal Cards in a row, each with an icon, a number (1, 2, 3 in Blue) and a heading.
+- **Title:** What the studies we reviewed leave open
+- **Gap 1:** Some pool the two official files and re-split them at random, which inflates scores
+- **Gap 2:** Accuracy and weighted F1 hide the rare attack classes
+- **Gap 3:** None separates model error from limits in the data itself
+- **Gap 4:** None adapts the detector to the shifted traffic mix at test time
 
-**On slide**
-- Kicker: RESEARCH GAP
-- Title: Three gaps this project closes
-- Card 1, **Incomparable protocols**: Many studies pool the two official files and re-split them at random, which inflates scores
-- Card 2, **Averages hide rare attacks**: Accuracy and weighted F1 are dominated by three classes that hold 74% of the training data
-- Card 3, **No head-to-head comparison**: In the studies reviewed, filter and embedded selection methods are never compared under one protocol with per-class results
-
-**Speaker notes**
-For example, one 2026 study states that it pools the official partitions and evaluates on a fresh 80/20 split, so its numbers cannot be compared with official-split results. The three classes in card 2 are Normal, Generic and Exploits. Our contribution is not a bigger model. It is a fair, reproducible comparison that makes the rare classes visible.
+**Speaker notes:** Our contribution follows these gaps: the official protocol, per-class reporting, a measured ceiling, and two adaptation steps.
 
 ---
 
-## Slide 7: Objectives
+## Slide 7: Methodology
 
-**Layout:** four rows. Each row: an icon, a bold label in Navy, then one line of text. Thin Line dividers between rows.
+- **Title:** One pipeline that never sees a test label
+- **Figure:** `docs/assets/pipeline.png`
+- **Steps:**
+  1. Load the official CSVs; drop the row id; encode protocol, service and state
+  2. Train XGBoost on all 42 features; keep 5-fold out-of-fold predictions on the training file
+  3. Rare-class bias: one offset per class, tuned on the out-of-fold predictions to maximise macro-F1
+  4. Prior shift: EM estimates the attack share of the unlabelled test traffic and re-weights the model's probabilities
+  5. Analyst feedback: 5 rounds, each labelling the 200 flows the model is least sure about, then retraining
+  6. Score once, on the test flows nobody labelled
 
-**On slide**
-- Kicker: OBJECTIVES
-- Title: What this project will deliver
-- **O1 · Reproducible baselines:** five classifiers on the official split, never re-split
-- **O2 · Fair comparison:** three selection methods, 5 to 42 features, one fixed protocol
-- **O3 · Rare-attack analysis:** per-class recall for every model, with and without class weighting
-- **O4 · Toward dynamic detection:** a leave-one-attack-out test for unseen, zero-day attacks
-
-**Speaker notes**
-O1 to O3 answer our three research questions. O4 is the second phase: it tests whether a detector trained on known attacks can still flag a new one, which is the core challenge of dynamic intrusion detection.
-
----
-
-## Slide 8: Methodology
-
-**Layout:** insert `docs/assets/pipeline.png` across the full width. It shows six boxes left to right with arrows (Blue outline, white fill, Navy text), each with a one-line caption beneath. A Navy bracket under boxes 2–5 labelled "fitted on training data only".
-
-**On slide**
-- Kicker: PROPOSED METHODOLOGY
-- Title: One pipeline, fitted on training data only
-- Box 1, **Official CSVs:** 175,341 train · 82,332 test
-- Box 2, **Preprocess:** drop row id; encode protocol, service, state
-- Box 3, **Rank features:** ANOVA-F · Mutual Information · RF importance
-- Box 4, **Select top-k:** k = 5, 10, 15, 20, 30, 42
-- Box 5, **Train classifier:** LR · DT · RF · HistGB, with and without class weights
-- Box 6, **Evaluate once:** on the untouched test file
-
-**Speaker notes**
-The key design rule is in the bracket. Every step that learns anything (the encoders, the feature rankings, the models) sees only training data. The test file is used once, at the end. This rules out data leakage, which is the most common reason published IDS numbers look better than they are.
+**Speaker notes:** Steps 3 and 4 use no test labels. Step 4 reads only unlabelled test traffic, as a deployed detector would read live traffic. Step 5 is the one place a person helps, and we count every label.
 
 ---
 
-## Slide 9: Techniques
+## Slide 8: Experimental setup
 
-**Layout:** left (7 cols) three stacked Cards for the selection methods; right (5 cols) a two-column table of classifiers.
+- **Title:** Setup and metrics
+- **Models:** Logistic Regression, Decision Tree, Random Forest, Histogram Gradient Boosting (plain and class-balanced), XGBoost
+- **Feature selection:** ANOVA F-test, mutual information, Random-Forest importance; top 5, 10, 15, 20, 30 and all 42 features
+- **Tasks:** binary (attack vs normal) and 10-class
+- **Metrics:**
+  - Detection rate = TP / (TP + FN): the share of attacks caught
+  - False-alarm rate = FP / (FP + TN): the share of normal flows flagged
+  - Macro-F1 = mean of the per-class F1 scores: every class counts equally
+- **Reproducibility:** fixed seed 42 · one command · 29 automated tests · CPU only
 
-**On slide**
-- Kicker: TECHNIQUES
-- Title: Three ways to rank a feature, five ways to classify
-- Card, **ANOVA F-test · Filter:** scores how strongly a feature's mean differs between classes. Fast; captures linear separation
-- Card, **Mutual Information · Filter:** measures any dependency between a feature and the class, including non-linear ones
-- Card, **Random-Forest Importance · Embedded:** credits the features that most reduce impurity across 200 trees; captures interactions
-
-| Classifier | Role |
-|---|---|
-| Logistic Regression | Linear baseline |
-| Decision Tree | Interpretable rules |
-| Random Forest | Bagged ensemble, 200 trees |
-| Histogram Gradient Boosting | Boosted ensemble, fast on large tables |
-| HistGB + class weights | Imbalance-aware variant |
-
-**Speaker notes**
-Filter methods judge each feature on its own, before any model is trained. The embedded method judges features by how a model actually uses them. Comparing the two families under the same protocol is exactly the gap from slide 6.
+**Speaker notes:** Attack is the positive class. We report macro-F1 because it gives Worms the same weight as Normal.
 
 ---
 
-## Slide 10: Evaluation
+## Slide 9: Finding 1: a hard ceiling
 
-**Layout:** left (6 cols) three formulas typeset with the equation editor, each with a Muted caption; right (6 cols) a two-column setup table.
+- **Title:** Some attacks cannot be told apart from these features
+- **Big number:** 93.60%: the highest 10-class accuracy any model can reach on the test file
+- **Points:**
+  - Many test flows are feature-for-feature identical to flows of another class
+  - Share of each class's test flows with such a twin: Analysis 91% · Backdoor 90% · DoS 69% · Exploits 29% · Worms 2%
+  - Where twins carry different labels, recall for one class can only rise at the expense of another
+  - Worms is different: rare, but almost never identical to another class
+- **Figure:** `results/conflict.png`
 
-**On slide**
-- Kicker: EVALUATION
-- Title: Measured the way a security operator would judge it
-- Detection Rate = TP / (TP + FN). Caption: share of attacks caught
-- False Alarm Rate = FP / (FP + TN). Caption: share of normal traffic wrongly flagged
-- Macro-F1 = (1/C) · Σ F1꜀. Caption: every class weighs the same, rare or common
-
-| Setting | Choice |
-|---|---|
-| Split | Official train/test, never re-split |
-| Tasks | Binary (attack vs normal) and 10-class |
-| Fitting | Encoders, rankings and models on training data only |
-| Reproducibility | Fixed seed 42 · one command · 18 automated tests |
-| Stack | Python, scikit-learn, pandas, matplotlib · CPU only |
-
-**Speaker notes**
-Here an attack is the positive class. Detection rate alone is not enough: a detector that raises too many false alarms gets switched off by the people running it. Macro-F1 is our headline metric because it gives Worms the same weight as Normal traffic.
+**Speaker notes:** We computed the best possible classifier: it answers each group of identical flows with the group's majority label. Even that classifier tops out at 93.60% accuracy and 0.765 macro-F1. Binary detection has no such limit: its ceiling is 99.99%.
 
 ---
 
-## Slide 11: Results I, baselines (result frame)
+## Slide 10: Finding 2: why the false alarms happen
 
-**Layout:** left (7 cols) table frame; right (5 cols) image frame.
+- **Title:** The detector learned the testbed, and the traffic mix moved
+- **Table:**
 
-**On slide**
-- Kicker: RESULTS · BASELINES
-- Title: *(written after the run, in this form)* "[Best model] reaches [macro-F1] macro-F1 using all 42 features"
-- Table frame with columns: Model · Accuracy · Macro-F1 · Detection Rate · False Alarm Rate. Two blocks, **Binary** and **10-class**, five rows each (LR, DT, RF, HistGB, HistGB + class weights)
-- Image frame: confusion matrix (10-class), labelled "results/confusion_multiclass.png"
-- Source line: results/results.csv, rows where selection = none
+| Source TTL (sttl) | Attack share in training file | Attack share in test file |
+| --- | ---: | ---: |
+| 0 | 9.6% | 5.8% |
+| 31 | 0.0% | 0.0% |
+| 62 | 87.7% | 60.2% |
+| 254 | 90.2% | 72.2% |
 
-**Speaker notes**
-*(Written after the run.)* Name the best model, read its macro-F1, and point to the confusion matrix row where a rare class leaks into a common one.
+- **Points:**
+  - Source TTL is set by the sending host's operating system and network path, not by the attack; yet two of our three selection methods rank it the most useful feature for attack detection
+  - Of 37,000 normal test flows, 9,693 are flagged; 73% of those are read as Fuzzers
+  - Among the 10 nearest training flows of each false alarm, 70% are attacks; for correctly passed normal flows, 10%
+- **Takeaway:** most false alarms sit where the training file itself says "attack"
 
----
-
-## Slide 12: Results II, feature selection (result frame)
-
-**Layout:** left (7 cols) chart frame; right (5 cols) two stacked frames.
-
-**On slide**
-- Kicker: RESULTS · FEATURE SELECTION
-- Title: *(written after the run, in this form)* "[k] features match the full 42-feature macro-F1 within one point"
-- Chart frame: macro-F1 against features kept, one line per method, labelled "results/selection_multiclass.png"
-- Frame 1: top 10 features of the best method, labelled "results/ranking_multiclass.csv"
-- Frame 2: recall of Worms, Backdoor, Analysis and Shellcode, HistGB vs HistGB + class weights, labelled "results/per_class_recall_multiclass.csv"
-
-**Speaker notes**
-*(Written after the run.)* State the smallest k that holds macro-F1 within one point of the full set, which method found it, and what happened to the four rare classes.
+**Speaker notes:** This is why a better classifier alone cannot remove these false alarms. The training data labels that region of feature space as attack, while the test data labels it normal. Fixing it needs either the new traffic mix (prior shift) or new labels (analyst feedback).
 
 ---
 
-## Slide 13: Next phase, dynamic detection
+## Slide 11: Results 1: baselines
 
-**Layout:** insert `docs/assets/zero_day.png` across the full width, with the three bullets in one row beneath it. The diagram shows nine rounded "chips", one per attack type. One chip (Worms) is greyed, with a dashed outline labelled "held out of training", and an arrow leads to the detector and the unseen-attack detection rate.
+- **Title:** No single model wins
+- **Table (all 42 features, full test file):**
 
-**On slide**
-- Kicker: NEXT PHASE
-- Title: Can the detector catch an attack it has never seen?
-- Leave-one-attack-out: train without one attack type, then test on it
-- Repeat for all nine attack types
-- Report an unseen-attack detection rate for each
+| Model | Binary accuracy | Binary false alarms | 10-class accuracy | 10-class macro-F1 |
+| --- | ---: | ---: | ---: | ---: |
+| LogReg | 80.44% | 39.8% | 67.19% | 0.319 |
+| DecisionTree | 86.38% | 25.1% | 73.35% | 0.490 |
+| RandomForest | 87.18% | 26.9% | 75.47% | 0.471 |
+| HistGB | 87.31% | 26.6% | 75.97% | 0.452 |
+| HistGB-balanced | 91.18% | 15.7% | 67.69% | 0.502 |
+| XGBoost | 87.23% | 26.2% | 76.16% | 0.505 |
 
-**Speaker notes**
-Real networks face attacks that were not in any training set. This experiment simulates that directly. If a lean, feature-selected detector still flags unseen attack types, that is strong evidence it learned general attack behaviour rather than memorising signatures.
+- **Points:**
+  - Binary: class-balanced HistGB is best, with 91.18% accuracy and 15.7% false alarms, and no labels at all
+  - 10-class: XGBoost has the best macro-F1 (0.505), so it is the base for the rest of the project; class balancing there raises false alarms to 40.4%
 
----
-
-## Slide 14: Plan and expected outcomes
-
-**Layout:** left (7 cols) insert `docs/assets/timeline.png`, a four-row Gantt chart over weeks 1–6, Blue bars; the week-1 bar filled solid with the label "code complete". Right (5 cols) four outcome bullets.
-
-**On slide**
-- Kicker: PLAN
-- Title: Six weeks from synopsis to final demo
-- Gantt rows:
-  - Week 1: Baselines and feature selection
-  - Weeks 2–3: Class weighting, tuning, full-data rankings
-  - Weeks 4–5: Leave-one-attack-out experiment
-  - Week 6: Report, final presentation, live demo
-- Expected outcomes:
-  - The smallest feature subset that matches full-feature detection
-  - A ranked list of the features that matter, and why
-  - A per-class picture of rare-attack detection
-  - An open, tested pipeline anyone can rerun with one command
-
-**Speaker notes**
-The pipeline is already written and tested, so the remaining weeks go into experiments and analysis, not setup. Every number in the final report will be regenerated by one command from the committed code.
+**Speaker notes:** Class balancing makes a model assume a 50/50 traffic mix. The test file is 55.1% attack, far closer to 50/50 than the training file's 68.1%. That single change removes more false alarms than any change of model, which is strong evidence for Finding 2: the traffic mix, not the model, drives the false alarms.
 
 ---
 
-## Slide 15: References
+## Slide 12: Results 2: feature selection
 
-**Layout:** numbered list, 12 pt, hanging indent.
+- **Title:** 5 features do the work of 42
+- **Points:**
+  - Top 5 features by mutual information: 10-class macro-F1 0.433, accuracy 76.15%
+  - All 42 features: macro-F1 0.435 to 0.451, accuracy 75.46% to 76.01% (the spread comes from feature order alone)
+  - The 5 features: `sbytes`, `smean`, `sload`, `dbytes`, `dmean`. All describe flow size and rate; none is a TTL field
+  - At 5 features the method matters: ANOVA F-test 0.218 · mutual information 0.433 · Random-Forest importance 0.403
+- **Figure:** `results/selection_multiclass.png`
 
-**On slide**
-- Kicker: REFERENCES
-- Title: References
-1. N. Moustafa and J. Slay, "UNSW-NB15: A comprehensive data set for network intrusion detection systems (UNSW-NB15 network data set)," in *Proc. Military Communications and Information Systems Conf. (MilCIS)*, Canberra, 2015.
+**Speaker notes:** Fewer features mean less to collect per flow and a model that is easier to explain. ANOVA's top 5 are all connection counters (`ct_dst_sport_ltm`, `ct_dst_src_ltm`, `ct_srv_dst`, `ct_src_dport_ltm`, `ct_srv_src`), which carry little on their own; mutual information picks features that are informative individually.
+
+---
+
+## Slide 13: Results 3: the improvement
+
+- **Title:** False alarms down, macro-F1 up
+- **Table (scored on the 81,332 test flows no analyst labelled):**
+
+| Variant | Binary accuracy | Binary false alarms | 10-class accuracy | 10-class macro-F1 | 10-class false alarms |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| XGBoost baseline | 87.81% | 25.3% | 76.75% | 0.506 | 23.9% |
+| + prior shift (no labels) | 88.51% | 23.4% | 77.89% | 0.509 | 20.7% |
+| + rare-class bias (no labels) | 87.81% | 25.3% | 75.10% | 0.544 | 25.6% |
+| + prior shift + rare-class bias (no labels) | 88.51% | 23.4% | 76.27% | 0.546 | 22.2% |
+| + analyst feedback (1,000 labels) | 91.34% | 18.2% | 80.03% | 0.525 | 19.3% |
+| + analyst feedback + prior shift | 91.26% | 18.4% | 80.95% | 0.528 | 16.8% |
+| + analyst feedback + prior shift + rare-class bias | 91.26% | 18.4% | 79.40% | 0.575 | 18.4% |
+
+- **Headline, 10-class:** macro-F1 0.506 → 0.575, false alarms 23.9% → 18.4%, accuracy 76.75% → 79.40%
+- **Headline, binary:** false alarms 25.3% → 18.4% (27% fewer), accuracy 87.81% → 91.26%
+- Cost: 1,000 analyst labels, 1.2% of the test traffic
+- **Figure:** `results/feedback.png`
+
+**Speaker notes:** The label-free steps already raise macro-F1 and cut false alarms. Analyst feedback brings the biggest cut in false alarms and the biggest gain in accuracy, because each round asks about the flows the model is least sure of; the rare-class bias brings the biggest gain in macro-F1. Binary false alarms by round: 26.2% → 23.7% → 21.9% → 20.2% → 19.2% → 18.2%. In binary the rare-class bias settles at zero and changes nothing, and the class-balanced model from slide 11 remains the best binary detector without labels.
+
+---
+
+## Slide 14: Results 4: rare classes
+
+- **Title:** Rare attacks become visible
+- **Table (10-class recall, baseline vs final):**
+
+| Class | Baseline recall | Final recall |
+| --- | ---: | ---: |
+| Backdoor | 0.073 | 0.125 |
+| Analysis | 0.114 | 0.502 |
+| DoS | 0.126 | 0.549 |
+| Worms | 0.395 | 0.814 |
+| Fuzzers | 0.549 | 0.644 |
+| Normal | 0.761 | 0.816 |
+| Reconnaissance | 0.815 | 0.810 |
+| Shellcode | 0.834 | 0.832 |
+| Exploits | 0.841 | 0.619 |
+| Generic | 0.973 | 0.977 |
+
+- **Figure:** `results/recall_gain_multiclass.png`
+
+**Speaker notes:** Worms rises from 0.395 to 0.814, Analysis from 0.114 to 0.502, DoS from 0.126 to 0.549. Exploits falls from 0.841 to 0.619: with identical twins across classes (slide 9), raising some classes' recall must lower others'. Backdoor stays low (0.125), as the ceiling predicts.
+
+---
+
+## Slide 15: Results 5: zero-day attacks
+
+- **Title:** Most attack types are caught even when never seen
+- **Table (binary detector, one attack type removed from training each time):**
+
+| Attack type held out | Test flows | Detected when seen in training | Detected when never seen |
+| --- | ---: | ---: | ---: |
+| Fuzzers | 6,062 | 91.6% | 41.3% |
+| Analysis | 677 | 96.3% | 93.1% |
+| Exploits | 11,132 | 99.5% | 98.3% |
+| Shellcode | 378 | 99.5% | 99.5% |
+| Reconnaissance | 3,496 | 99.9% | 99.7% |
+| DoS | 4,089 | 99.9% | 99.7% |
+| Generic | 18,871 | 100.0% | 99.7% |
+| Backdoor | 583 | 100.0% | 100.0% |
+| Worms | 44 | 100.0% | 100.0% |
+
+- **Point:** 8 of 9 attack types are still detected at 90% or more without a single training example; the hardest is Fuzzers (41.3%)
+- **Figure:** `results/zero_day.png` · concept: `docs/assets/zero_day.png`
+
+**Speaker notes:** This is the dynamic-detection test. A detector that only memorised attack signatures would fail here. Most types are still flagged, because they behave unlike normal traffic. Fuzzers is the exception, and it is also what the false alarms are read as (slide 10): it is the attack that looks most like normal traffic.
+
+---
+
+## Slide 16: Conclusion
+
+- **Title:** What this project shows
+- The traffic mix drives the false alarms: class balancing alone cuts HistGB's binary false alarms from 26.6% to 15.7%, with no labels
+- Some classes have a hard ceiling: most Analysis, Backdoor and DoS test flows have an identical twin in another class; no model passes 93.60% 10-class accuracy
+- Final 10-class system: macro-F1 0.506 → 0.575, Worms recall 0.395 → 0.814, false alarms 23.9% → 18.4%
+- 5 flow-size and rate features carry almost all the signal of 42
+
+**Speaker notes:** The practical message for a security team: measure the ceiling first, adapt to the traffic you see, and spend analyst time on the flows the model is least sure about.
+
+---
+
+## Slide 17: Limitations and next steps
+
+- **Title:** Limitations and next steps
+- One dataset; next is a cross-dataset test, for example CIC-IDS2017
+- Analyst feedback is simulated with the true test labels, and its settings (weight 20, 200 flows per round) were fixed by hand
+- One split and one seed; feature order alone moves 10-class macro-F1 by about ±0.01
+- Next: feedback on top of the class-balanced model, and streaming evaluation where feedback arrives over time
+
+**Speaker notes:** These are honest limits, not hidden ones. Each next step extends the same pipeline.
+
+---
+
+## Slide 18: References
+
+1. N. Moustafa and J. Slay, "UNSW-NB15: A comprehensive data set for network intrusion detection systems (UNSW-NB15 network data set)," in *Proc. MilCIS*, 2015.
 2. S. M. Kasongo and Y. Sun, "Performance analysis of intrusion detection systems using a feature selection method on the UNSW-NB15 dataset," *Journal of Big Data*, vol. 7, art. 105, 2020.
 3. Y. Yin *et al.*, "IGRF-RFE: A hybrid feature selection method for MLP-based network intrusion detection on UNSW-NB15 dataset," *Journal of Big Data*, vol. 10, 2023.
 4. M. Sarhan, S. Layeghy and M. Portmann, "Towards a standard feature set for network intrusion detection system datasets," arXiv:2101.11315, 2021.
 5. T.-T. Nguyen and M. Park, "EL-GNN: A continual-learning-based graph neural network for task-incremental intrusion detection systems," *Electronics*, vol. 14, art. 2756, 2025.
+6. M. Saerens, P. Latinne and C. Decaestecker, "Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure," *Neural Computation*, vol. 14, no. 1, 2002.
+7. T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," in *Proc. ACM SIGKDD*, 2016.
+8. B. Settles, "Active learning literature survey," Computer Sciences Technical Report 1648, University of Wisconsin–Madison, 2009.
 
 ---
 
-## Slide 16: Thank you
+## Slide 19: Thank you
 
-**Layout:** same background image and layout as slide 1.
-
-**On slide**
-- Title: Thank you
-- Subtitle: Questions and suggestions are welcome
-- Small line: Code and results: [GitHub link]
+- **Title:** Thank you
+- Questions and suggestions are welcome
 
 ---
 
-## Viva prep (not slides, for the team)
+## Viva preparation (for the team, not a slide)
 
-**Why UNSW-NB15 and not NSL-KDD?**
-NSL-KDD is derived from 1998–99 traffic. UNSW-NB15 (2015) has modern attack types and an official split, so results can be compared fairly.
+**Why UNSW-NB15 and not NSL-KDD?** NSL-KDD derives from 1998–99 traffic. UNSW-NB15 has modern attacks and an official train/test split.
 
-**Why not deep learning?**
-The question is which features matter. Tree ensembles reach strong results on tabular data, train in minutes on a CPU, and are interpretable. Deep models would hide the answer we are looking for.
+**Why not deep learning?** The question is which features matter and why the errors happen. Tree ensembles are strong on tabular data, train in minutes on a CPU, and stay explainable.
 
-**Why insist on the official split?**
-Pooling and re-splitting can put near-identical records on both sides, which inflates scores. The official test file also has a different attack mix (55.1% vs 68.1%), which tests generalisation.
+**Why is class-balanced HistGB so good at binary?** Balancing assumes a 50/50 mix. The test file is 55.1% attack, close to that; the training file is 68.1%. The prior, not the model, is the main cause of the false alarms.
 
-**Why macro-F1 over accuracy?**
-Missing every Worms attack costs 0.05% accuracy, but it can cost up to one tenth of macro-F1, because Worms is one of the ten classes.
+**Is the prior shift cheating?** No. It reads only unlabelled test features, which a deployed detector sees anyway. Test labels are used once, for scoring.
 
-**What is new here?**
-A same-protocol, per-class comparison of filter and embedded feature selection on the official split, plus a leave-one-attack-out test for unseen attacks.
+**Is the analyst feedback cheating?** It uses 1,000 test labels, which we count and report, and every score excludes those flows. That is how a detector would be maintained in practice.
 
-**How is this "dynamic"?**
-Phase 2 measures detection of attack types never seen in training, which is the defining problem of dynamic, evolving threats.
+**What is the ceiling?** If two flows have identical features but different labels, no model can get both right. Answering each identical group with its majority label gives the best possible score: 93.60% accuracy for 10 classes.
+
+**What is new here?** A measured ceiling, a diagnosis of where the false alarms come from, and two adaptation steps, all under the official protocol.

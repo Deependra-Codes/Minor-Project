@@ -1,0 +1,2 @@
+normal_flows,false_alarms,fa_read_as,fa_read_as_share,fa_train_neighbour_attack_share,ok_train_neighbour_attack_share
+37000,9693,Fuzzers,0.7301,0.7006,0.0956

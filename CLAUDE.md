@@ -5,10 +5,13 @@ medicinal leaf classification, feature selection + ML, dynamic intrusion detecti
 
 ## LOCKED TARGET
 Topic: network intrusion detection on the official UNSW-NB15 split; feature selection + ML; label-free adaptation to traffic shift.
-Findings so far: 93.6% multiclass accuracy ceiling (identical vectors, different labels); Analysis/Backdoor ~90% of test rows unidentifiable;
-TTL testbed shortcut; normal share 31.9% train vs 44.9% test drives a ~26% false-alarm rate.
-Method: XGBoost + EM prior shift (no test labels) + macro-F1 class bias tuned on out-of-fold train predictions. Zero-day = leave-one-attack-out.
-Code: `ids/` (rules in AGENTS.md). Gate: `ruff check . && ruff format --check . && pytest -q`. Full run: `python -m ids.run` (~15 min).
+Findings (results/, run from 670b5cc): 93.60% 10-class accuracy ceiling (identical flows, different labels;
+Analysis 91%, Backdoor 90% have twins). Attack share 68.1% train vs 55.1% test drives ~26% false alarms; 73% of them
+are read as Fuzzers and 70% of their training neighbours are attacks. Class-balanced HistGB alone: binary FAR 15.7%.
+Final (XGBoost + rare-class bias + EM prior shift + 1,000 analyst labels): 10-class macro-F1 0.506 -> 0.575, FAR 23.9% -> 18.4%;
+binary FAR 25.3% -> 18.4%. Top-5 mutual-information features ~ all 42. Zero-day: 8 of 9 attack types >= 90%, Fuzzers 41%.
+Method: XGBoost + EM prior shift (no test labels) + macro-F1 class bias (out-of-fold train) + analyst feedback (5x200 least-certain flows). Zero-day = leave-one-attack-out.
+Code: `ids/` (rules in AGENTS.md). Gate: `ruff check . && ruff format --check . && pytest -q`. Full run: `python -m ids.run` (~25 min), then `python scripts/slide_content.py`.
 Data: data/UNSW_NB15_{training,testing}-set.csv, gitignored, MD5s in README. Official site, Zenodo, HF, Kaggle blocked here; GitHub mirrors work.
 Deliverables: results/ (numbers + figures), docs/ppt-content.md (slide text only, no design; every number from results/), docs/assets/ (slide figures).
 

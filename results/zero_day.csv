@@ -1,0 +1,10 @@
+held_out,test_rows,detection_seen,detection_unseen
+Analysis,677,0.9631,0.9306
+Backdoor,583,1.0000,1.0000
+DoS,4089,0.9993,0.9973
+Exploits,11132,0.9950,0.9829
+Fuzzers,6062,0.9159,0.4127
+Generic,18871,0.9999,0.9974
+Reconnaissance,3496,0.9991,0.9966
+Shellcode,378,0.9947,0.9947
+Worms,44,1.0000,1.0000
