@@ -18,6 +18,7 @@ def test_end_to_end_writes_every_output(data_dir, tmp_path):
         "+class bias",
         "+prior shift +class bias",
         "+feedback",
+        "+feedback +prior shift",
         "+feedback +prior shift +class bias",
     ]
     assert (ladder["eval_rows"] == 150 - 5 * 5).all()  # every variant scored on the same unlabelled flows
@@ -35,5 +36,12 @@ def test_end_to_end_writes_every_output(data_dir, tmp_path):
         "conflict.png",
         "feedback_curve.csv",
         "feedback.png",
+        "ttl_shift.csv",
     ]:
         assert (out / name).exists(), name
+    diagnosis = pd.read_csv(out / "diagnosis.csv").iloc[0]
+    assert diagnosis["false_alarms"] <= diagnosis["normal_flows"]
+    for share in ("fa_train_neighbour_attack_share", "ok_train_neighbour_attack_share"):
+        assert 0 <= diagnosis[share] <= 1 or pd.isna(diagnosis[share])
+    ttl = pd.read_csv(out / "ttl_shift.csv")
+    assert set(ttl["split"]) == {"train", "test"} and ttl["attack_share"].between(0, 1).all()

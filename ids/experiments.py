@@ -6,6 +6,8 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import QuantileTransformer
 
 from ids.adapt import em_attack_share, prior_shift, query_uncertain, tune_class_bias
 from ids.ceiling import identifiability
@@ -121,6 +123,7 @@ def improve(split: Split, task: Task, out: Path, per_round: int) -> tuple[list[d
         "+class bias": base + bias,
         "+prior shift +class bias": shifted(proba, train_share) + bias,
         "+feedback": np.log(fb_proba + EPS),
+        "+feedback +prior shift": shifted(fb_proba, fb_share),
         "+feedback +prior shift +class bias": shifted(fb_proba, fb_share) + bias,
     }
     y_rest = split.y_test.iloc[rest]
@@ -170,3 +173,45 @@ def zero_day(train: pd.DataFrame, test: pd.DataFrame, out: Path) -> list[dict]:
         )
     zero_day_chart(pd.DataFrame(rows), out / "zero_day.png")
     return rows
+
+
+def diagnose(train: pd.DataFrame, test: pd.DataFrame, out: Path) -> list[dict]:
+    """Where binary false alarms come from: the TTL shortcut, and what the training data says about them."""
+    ttl = pd.concat(
+        [
+            df.groupby("sttl")["label"].agg(rows="size", attack_share="mean").assign(split=name)
+            for name, df in (("train", train), ("test", test))
+        ]
+    ).reset_index()
+    per_value = ttl.groupby("sttl")["rows"].sum()
+    common = per_value[per_value >= 0.01 * per_value.sum()].index  # TTL values covering 1%+ of all flows
+    ttl[ttl["sttl"].isin(common)].to_csv(out / "ttl_shift.csv", index=False, float_format="%.4f")
+
+    binary, multi = make_split(train, test, "binary"), make_split(train, test, "multiclass")
+    classes, proba, _, _ = fit_proba(FINAL_MODEL, binary.X_train, binary.y_train, binary.X_test)
+    normal = binary.y_test.to_numpy() == NORMAL
+    flagged = classes[proba.argmax(1)] != NORMAL
+    false_alarm, kept = normal & flagged, normal & ~flagged
+    classes, proba, _, _ = fit_proba(FINAL_MODEL, multi.X_train, multi.y_train, multi.X_test)
+    read_as = pd.Series(classes[proba.argmax(1)][false_alarm]).value_counts(normalize=True)
+
+    scale = QuantileTransformer(n_quantiles=200, random_state=SEED).fit(binary.X_train)
+    neighbours = NearestNeighbors(n_neighbors=10).fit(scale.transform(binary.X_train))
+    attack = binary.y_train.to_numpy() != NORMAL
+
+    def neighbour_attack_share(mask: np.ndarray) -> float:
+        if not mask.any():
+            return float("nan")
+        idx = neighbours.kneighbors(scale.transform(binary.X_test[mask]), return_distance=False)
+        return float(attack[idx].mean())
+
+    return [
+        {
+            "normal_flows": int(normal.sum()),
+            "false_alarms": int(false_alarm.sum()),
+            "fa_read_as": read_as.index[0] if len(read_as) else "",
+            "fa_read_as_share": float(read_as.iloc[0]) if len(read_as) else float("nan"),
+            "fa_train_neighbour_attack_share": neighbour_attack_share(false_alarm),
+            "ok_train_neighbour_attack_share": neighbour_attack_share(kept),
+        }
+    ]
