@@ -13,6 +13,8 @@ Engineering rules for this repo. Ruff and pytest enforce most of them. The rest 
 | `ids/selection.py` | Feature ranking methods | `data` |
 | `ids/run.py` | CLI, experiment order, writing `results/` | all of the above |
 
+`scripts/slide_figures.py` draws the slide visuals that need no results into `docs/assets/`. It imports nothing from `ids`.
+
 Imports go downward only. `tests/test_boundaries.py` fails the build on an upward import. A new module gets a row here and in that test, or the test fails.
 
 ## Non-negotiable
@@ -22,7 +24,7 @@ Imports go downward only. `tests/test_boundaries.py` fails the build on an upwar
 - **`id` is never a feature.** It is a row number.
 - **Report macro-F1 and per-class recall, never accuracy alone.** Accuracy hides Worms (130 training rows) and Backdoor.
 - **Seed 42 everywhere.** A number that changes on re-run is not a result.
-- **Every number in a slide, the synopsis or the report comes from `results/*.csv` made by committed code.** No hand-typed numbers.
+- **Every result number in a slide, the synopsis or the report comes from `results/*.csv` made by committed code.** No hand-typed numbers.
 
 ## Size
 

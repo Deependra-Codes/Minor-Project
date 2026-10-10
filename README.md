@@ -49,7 +49,8 @@ The first lines printed are the class counts. They must match the table in [`doc
 ```
 ids/          data → selection, metrics → run   (imports go downward only; see AGENTS.md)
 tests/        pytest on synthetic UNSW-shaped data, plus the import-boundary test
-docs/         research.md (problem, literature, gap, plan) · ppt-content.md (slide brief)
+docs/         research.md (problem, literature, gap, plan) · ppt-content.md (slide brief) · assets/ (slide figures)
+scripts/      slide_figures.py: python scripts/slide_figures.py redraws docs/assets/
 notes/        one-page summaries of the papers the guide shared
 ```
 

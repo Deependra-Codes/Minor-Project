@@ -9,6 +9,7 @@ Give this whole file to the slide-making AI.
 3. Put each **Speaker notes** block into that slide's notes field.
 4. Slides 11 and 12 are **result frames**. Draw the empty table grid and chart area with the label *"Inserted from results/ after the run"*. Do not fill in numbers.
 5. 16 slides, no more and no fewer.
+6. **Images:** use only the figures in `docs/assets/` (and `results/` for slides 11–12). No stock photos and no AI-generated pictures: they read as filler to an examiner.
 
 ---
 
@@ -55,7 +56,7 @@ Use Calibri if Inter or Montserrat is missing. Nothing goes below 10 pt.
 
 ## Slide 1: Title
 
-**Layout:** Navy full-bleed. Text left-aligned on the left 8 columns. A thin vertical Blue rule beside the title.
+**Layout:** background image `docs/assets/title_background.png`, full-bleed (a faint network on the right; three orange nodes stand for the rare attacks). Text left-aligned on the left 7 columns. A thin vertical Blue rule beside the title.
 
 **On slide**
 - Kicker: MINOR PROJECT · SYNOPSIS
@@ -115,7 +116,7 @@ The four rare types are Analysis, Backdoor, Shellcode and Worms: 5,009 of 175,34
 
 **Layout:** left (5 cols) a 2 × 2 grid of stat tiles; right (7 cols) a horizontal bar chart. Footnote across the bottom.
 
-**Visual:** horizontal bars of training records per class, sorted descending, **log-scale** x-axis, Blue bars, the Worms bar in Orange, a value label at each bar end. Callout near the Worms bar: "Normal : Worms = 431 : 1".
+**Visual:** insert `docs/assets/class_distribution.png`. If it must be redrawn, match it: horizontal bars of training records per class, sorted descending, **log-scale** x-axis, Blue bars, the Worms bar in Orange, a value label at each bar end. Callout near the Worms bar: "Normal : Worms = 431 : 1".
 
 Chart data (training set):
 
@@ -201,7 +202,7 @@ O1 to O3 answer our three research questions. O4 is the second phase: it tests w
 
 ## Slide 8: Methodology
 
-**Layout:** six boxes left to right with arrows (Blue outline, white fill, Navy text), each with a one-line caption beneath. A Navy bracket under boxes 2–5 labelled "fitted on training data only".
+**Layout:** insert `docs/assets/pipeline.png` across the full width. It shows six boxes left to right with arrows (Blue outline, white fill, Navy text), each with a one-line caption beneath. A Navy bracket under boxes 2–5 labelled "fitted on training data only".
 
 **On slide**
 - Kicker: PROPOSED METHODOLOGY
@@ -300,7 +301,7 @@ Here an attack is the positive class. Detection rate alone is not enough: a dete
 
 ## Slide 13: Next phase, dynamic detection
 
-**Layout:** left (6 cols) a diagram: nine rounded "chips", one per attack type. One chip (Worms) is greyed, with a dashed outline labelled "held out of training", and an arrow leads to a box "Test: is it flagged as an attack?". Right (6 cols) three bullets.
+**Layout:** insert `docs/assets/zero_day.png` across the full width, with the three bullets in one row beneath it. The diagram shows nine rounded "chips", one per attack type. One chip (Worms) is greyed, with a dashed outline labelled "held out of training", and an arrow leads to the detector and the unseen-attack detection rate.
 
 **On slide**
 - Kicker: NEXT PHASE
@@ -316,7 +317,7 @@ Real networks face attacks that were not in any training set. This experiment si
 
 ## Slide 14: Plan and expected outcomes
 
-**Layout:** left (7 cols) a four-row Gantt chart over weeks 1–6, Blue bars; the week-1 bar filled solid with the label "code complete". Right (5 cols) four outcome bullets.
+**Layout:** left (7 cols) insert `docs/assets/timeline.png`, a four-row Gantt chart over weeks 1–6, Blue bars; the week-1 bar filled solid with the label "code complete". Right (5 cols) four outcome bullets.
 
 **On slide**
 - Kicker: PLAN
@@ -354,7 +355,7 @@ The pipeline is already written and tested, so the remaining weeks go into exper
 
 ## Slide 16: Thank you
 
-**Layout:** Navy full-bleed, same layout as slide 1.
+**Layout:** same background image and layout as slide 1.
 
 **On slide**
 - Title: Thank you
