@@ -44,6 +44,11 @@ def table(header: list[str], rows: list[list[str]]) -> str:
     return "\n".join("| " + " | ".join(str(cell) for cell in line) + " |" for line in lines)
 
 
+def scores(b: pd.Series, m: pd.Series) -> list[str]:
+    """Binary accuracy and false alarms (b), then 10-class accuracy and macro-F1 (m)."""
+    return [pct(b["accuracy"], 2), pct(b["false_alarm_rate"]), pct(m["accuracy"], 2), f3(m["macro_f1"])]
+
+
 def dataset(counts: pd.DataFrame) -> dict:
     n_train, n_test = counts["train"].sum(), counts["test"].sum()
     return {
@@ -58,16 +63,7 @@ def baselines(res: pd.DataFrame) -> dict:
     base = res[res["selection"] == "none"].set_index(["task", "model"])
     rows = []
     for model in base.loc["binary"].index:
-        b, m = base.loc[("binary", model)], base.loc[("multiclass", model)]
-        rows.append(
-            [
-                model,
-                pct(b["accuracy"], 2),
-                pct(b["false_alarm_rate"]),
-                pct(m["accuracy"], 2),
-                f3(m["macro_f1"]),
-            ]
-        )
+        rows.append([model, *scores(base.loc[("binary", model)], base.loc[("multiclass", model)])])
     header = ["Model", "Binary accuracy", "Binary false alarms", "10-class accuracy", "10-class macro-F1"]
     xgb_b, xgb_m = base.loc[("binary", "XGBoost")], base.loc[("multiclass", "XGBoost")]
     return {
@@ -87,8 +83,7 @@ def ladder(improvement: pd.DataFrame, curve: pd.DataFrame, n_test: int) -> dict:
     rows = []
     for key, name in VARIANTS.items():
         b, m = lad.loc[("binary", key)], lad.loc[("multiclass", key)]
-        rows.append([name, pct(b["accuracy"], 2), pct(b["false_alarm_rate"]), pct(m["accuracy"], 2)])
-        rows[-1] += [f3(m["macro_f1"]), pct(m["false_alarm_rate"])]
+        rows.append([name, *scores(b, m), pct(m["false_alarm_rate"])])
     header = ["Variant", "Binary accuracy", "Binary false alarms", "10-class accuracy", "10-class macro-F1"]
     labels = int(improvement["labels_used"].iloc[0])
     out = {
@@ -107,15 +102,102 @@ def ladder(improvement: pd.DataFrame, curve: pd.DataFrame, n_test: int) -> dict:
     return out | {"b_far_cut": pct(cut, 0)}
 
 
-def ceiling(ceil: pd.DataFrame) -> dict:
+def ceiling(ceil: pd.DataFrame, f1: pd.DataFrame) -> dict:
+    """The ceilings, and an error budget: best possible F1 per class vs XGBoost's F1 on the same rows."""
+    m = ceil.loc["multiclass"]
+    rows = [
+        [
+            c,
+            f3(m[f"f1_ceiling_{c}"]),
+            f3(f1.loc[c, "XGBoost"]),
+            f3(m[f"f1_ceiling_{c}"] - f1.loc[c, "XGBoost"]),
+        ]
+        for c in f1.index
+    ]
+    rows.sort(key=lambda r: float(r[1]))
     out = {
-        "ceil_m_acc": pct(ceil.loc["multiclass", "accuracy_ceiling"], 2),
-        "ceil_m_f1": f3(ceil.loc["multiclass", "macro_f1_ceiling"]),
+        "ceil_m_acc": pct(m["accuracy_ceiling"], 2),
+        "ceil_m_f1_majority": f3(m["majority_macro_f1"]),
+        "ceil_m_f1_lo": f3(m["macro_f1_lower"]),
+        "ceil_m_f1_hi": f3(m["macro_f1_upper"]),
         "ceil_b_acc": pct(ceil.loc["binary", "accuracy_ceiling"], 2),
+        "budget_table": table(["Class", "Best possible F1", "XGBoost F1", "Gap"], rows),
     }
-    return out | {
-        f"conf_{c}": pct(ceil.loc["multiclass", f"conflict_{c}"], 0)
-        for c in ("Analysis", "Backdoor", "DoS", "Exploits", "Worms")
+    out |= {f"cap_{c}": f3(m[f"f1_ceiling_{c}"]) for c in f1.index} | {
+        f"xf1_{c}": f3(f1.loc[c, "XGBoost"]) for c in f1.index
+    }
+    return out | {f"conf_{c}": pct(m[f"conflict_{c}"], 0) for c in f1.index}
+
+
+def sweep(rows: pd.DataFrame, attr: pd.Series) -> dict:
+    """Detection in three bands of source TTL: below the attack hosts, at them, and every other value."""
+    hosts = [int(v) for v in str(attr["attack_ttls"]).split()]
+    below = rows[rows["ttl"] < min(hosts)].groupby("model")["detection"].max()
+    at = rows[rows["ttl"].isin(hosts)].groupby("model")["detection"].min()
+    rest = rows[(rows["ttl"] > min(hosts)) & ~rows["ttl"].isin(hosts)].groupby("model")["detection"]
+    out = {"sweep_cut": min(hosts), "sweep_below": min(hosts) - 1}
+    for model, key in (("XGBoost", "xgb"), ("HistGB-balanced", "hgb")):
+        out |= {f"sweep_{key}_max": pct(below[model], 2), f"sweep_{key}_hosts": pct(at[model])}
+        span = f"{pct(rest.min()[model])} to {pct(rest.max()[model])}"
+        out[f"sweep_{key}_rest"] = f"typically {pct(rest.median()[model])} (range {span})"
+    return out
+
+
+def ttl(ev: pd.DataFrame, attr: pd.Series) -> dict:
+    """The one-byte evasion: rewriting the source TTL of every attack flow to a normal host's value."""
+    only = ev.set_index(["model", "features", "ttl"]).sort_index()
+    mode = int(only.loc[("XGBoost", "all"), "train_normal_share"].idxmax())
+    xgb, hgb = only.loc[("XGBoost", "all", mode)], only.loc[("HistGB-balanced", "all", mode)]
+    others = [v for v in only.loc[("XGBoost", "all")].index if v != mode]
+    return {
+        "ttl_mode": mode,
+        "ttl_mode_share": pct(xgb["train_normal_share"]),
+        "xgb_clean_dr": pct(xgb["clean_detection"]),
+        "xgb_mode_dr": pct(xgb["detection"], 2),
+        "hgb_clean_dr": pct(hgb["clean_detection"]),
+        "hgb_mode_dr": pct(hgb["detection"], 2),
+        "mode_max_type": pct(xgb[[c for c in ev.columns if c.startswith("det_")]].max()),
+        "ttl_other": "; ".join(f"{v}: {pct(only.loc[('XGBoost', 'all', v), 'detection'])}" for v in others),
+        "ct_match": pct(attr["ct_rule_test_match"], 2),
+        "fa_sttl_share": pct(attr["fa_top_feature_sttl_share"], 0),
+        "fa_host_share": pct(attr["fa_attack_ttl_share"], 2),
+        "attack_ttls": ", ".join(str(attr["attack_ttls"]).split()),
+        "proxy_auc": f3(attr["no_ttl_recovers_attack_ttl_auc"]),
+    }
+
+
+def robustness(ev: pd.DataFrame, free: pd.DataFrame, sub: pd.DataFrame, mode: int) -> dict:
+    """All 42 features vs the 39 without TTL, for binary XGBoost: clean, rewritten, and forged."""
+    fb = free[(free["task"] == "binary") & (free["model"] == "XGBoost")].set_index("features")
+    fm = free[free["task"] == "multiclass"].set_index("features")
+    rewritten = ev[(ev["model"] == "XGBoost") & (ev["ttl"] == mode)]
+    xgb = sub[sub["model"] == "XGBoost"].sort_values("detection")
+    worst = {n: xgb[xgb["n_forged"] == n].groupby("features").first() for n in (1, 2)}
+    cells = {
+        fs: [
+            pct(fb.loc[fs, "detection_rate"]),
+            pct(fb.loc[fs, "false_alarm_rate"]),
+            f3(fm.loc[fs, "macro_f1"]),
+            pct(rewritten.set_index("features").loc[fs, "detection"]),
+            *(f"`{worst[n].loc[fs, 'forged']}`: {pct(worst[n].loc[fs, 'detection'])}" for n in (1, 2)),
+        ]
+        for fs in ("all", "no_ttl")
+    }
+    labels = [
+        "Attacks detected",
+        "False alarms",
+        "10-class macro-F1 (XGBoost)",
+        f"Detected after TTL := {mode}",
+    ]
+    labels += ["Worst single forged feature", "Worst forged pair"]
+    rows = [[label, cells["all"][i], cells["no_ttl"][i]] for i, label in enumerate(labels)]
+    return {
+        "robust_table": table(["", "All 42 features", "39 features, no TTL"], rows),
+        "nottl_dr": pct(fb.loc["no_ttl", "detection_rate"]),
+        "far_all": pct(fb.loc["all", "false_alarm_rate"]),
+        "far_nottl": pct(fb.loc["no_ttl", "false_alarm_rate"]),
+        "far_nottl_hosts": pct(fb.loc["no_ttl", "far_attack_ttl_normals"]),
+        "far_nottl_rest": pct(fb.loc["no_ttl", "far_other_normals"]),
     }
 
 
@@ -190,18 +272,26 @@ def zero_day(zero: pd.DataFrame) -> dict:
     }
 
 
-def main(results: Path, out: Path) -> None:
+def values(results: Path) -> dict:
+    """Every slide placeholder, read from the CSVs in results."""
     read = lambda name, **kw: pd.read_csv(results / f"{name}.csv", **kw)  # noqa: E731
     counts, res = read("class_counts", index_col=0), read("results")
     values = dataset(counts) | baselines(res)
     values |= ladder(read("improvement"), read("feedback_curve"), int(counts["test"].sum()))
-    values |= ceiling(read("ceiling", index_col=0))
+    values |= ceiling(read("ceiling", index_col=0), read("per_class_f1_multiclass", index_col=0))
+    evasion, attribution = read("evasion"), read("ttl_attribution").iloc[0]
+    values |= ttl(evasion, attribution) | sweep(read("ttl_sweep"), attribution)
+    values |= robustness(evasion, read("ttl_free"), read("substitution"), values["ttl_mode"])
     values |= diagnosis(read("diagnosis").iloc[0], read("ttl_shift"))
     values |= selection(res, read("ranking_multiclass", index_col=0))
     values |= rare_classes(read("recall_gain_multiclass", index_col=0))
-    values |= zero_day(read("zero_day"))
-    out.write_text(Template(TEMPLATE.read_text()).substitute(values))
-    print(f"wrote {out} ({len(values)} values)")
+    return values | zero_day(read("zero_day"))
+
+
+def main(results: Path, out: Path) -> None:
+    filled = values(results)
+    out.write_text(Template(TEMPLATE.read_text()).substitute(filled))
+    print(f"wrote {out} ({len(filled)} values)")
 
 
 if __name__ == "__main__":

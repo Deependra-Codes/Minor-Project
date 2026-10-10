@@ -23,3 +23,10 @@ def per_class_recall(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
     return dict(
         zip(labels, recall_score(y_true, y_pred, labels=labels, average=None, zero_division=0), strict=True)
     )
+
+
+def per_class_f1(y_true: pd.Series, y_pred: np.ndarray) -> dict[str, float]:
+    labels = sorted(set(y_true))
+    return dict(
+        zip(labels, f1_score(y_true, y_pred, labels=labels, average=None, zero_division=0), strict=True)
+    )

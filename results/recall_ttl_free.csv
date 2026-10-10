@@ -1,0 +1,11 @@
+class,all,no_ttl
+Analysis,0.1137,0.1226
+Backdoor,0.0703,0.0703
+DoS,0.1296,0.1030
+Exploits,0.8309,0.8301
+Fuzzers,0.5431,0.5449
+Generic,0.9722,0.9710
+Normal,0.7572,0.7562
+Reconnaissance,0.8081,0.8084
+Shellcode,0.8307,0.8175
+Worms,0.4091,0.3182

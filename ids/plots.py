@@ -175,3 +175,35 @@ def feedback_chart(curve: pd.DataFrame, path: Path) -> None:
     _style(ax, "False alarms fall as an analyst labels the least certain flows")
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
+
+
+def mark_groups(marks: dict[int, str]) -> dict[str, list[int]]:
+    """TTL values per kind of vertical mark, sorted."""
+    kinds = ("normal TTL", "attack TTL")
+    return {kind: sorted(v for v, label in marks.items() if label == kind) for kind in kinds}
+
+
+def ttl_sweep_chart(rows: pd.DataFrame, marks: dict[int, str], path: Path) -> None:
+    """Detection when every attack flow's source TTL is set to one value, 0-255, one line per model."""
+    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+    colors = (SERIES["anova_f"][0], SERIES["mutual_info"][0])
+    for (model, r), color in zip(rows.groupby("model", sort=False), colors, strict=False):
+        ax.plot(r["ttl"], r["detection"], color=color, lw=2, label=model)
+    styles = {"normal TTL": "--", "attack TTL": ":"}
+    for kind, values in mark_groups(marks).items():
+        ls = styles[kind]
+        for value in values:
+            ax.axvline(value, color=MUTED, lw=1, ls=ls, zorder=0)
+        if values:
+            ax.plot([], [], color=MUTED, lw=1, ls=ls, label=f"{kind}: {', '.join(map(str, values))}")
+    ax.set_xlim(0, 255)
+    ax.set_xticks([0, 32, 64, 96, 128, 160, 192, 224, 255])
+    ax.set_ylim(-0.02, 1.02)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    ax.grid(axis="y", color=GRID, lw=0.8)
+    ax.set_xlabel("source TTL written into every attack flow", color=MUTED)
+    ax.set_ylabel("attacks still detected", color=MUTED)
+    ax.legend(frameon=False, labelcolor=INK, fontsize=8.5, loc="lower right")
+    _style(ax, "Detection after rewriting one header byte")
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)

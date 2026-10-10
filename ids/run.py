@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 from ids.data import make_split, read_partition, target
+from ids.evasion import evasion
 from ids.experiments import baselines, ceiling, diagnose, improve, selection, zero_day
 from ids.plots import feedback_chart
 
@@ -53,6 +54,8 @@ def main(argv: list[str] | None = None) -> None:
     zero = zero_day(train, test, args.out)
     print("[binary] diagnose false alarms ...", flush=True)
     diagnosis = diagnose(train, test, args.out)
+    print("[binary] TTL evasion and TTL-free detector ...", flush=True)
+    ttl_tables = evasion(train, test, args.out)
     feedback_chart(pd.DataFrame(curve), args.out / "feedback.png")
 
     for name, table in (
@@ -62,6 +65,7 @@ def main(argv: list[str] | None = None) -> None:
         ("ceiling", ceilings),
         ("zero_day", zero),
         ("diagnosis", diagnosis),
+        *ttl_tables.items(),
     ):
         pd.DataFrame(table).to_csv(args.out / f"{name}.csv", index=False, float_format="%.4f")
     print(

@@ -13,8 +13,9 @@ ALLOWED = {
     "ceiling": set(),
     "metrics": {"data"},
     "selection": {"data"},
+    "evasion": {"data", "metrics", "models", "plots"},
     "experiments": {"adapt", "ceiling", "data", "metrics", "models", "plots", "selection"},
-    "run": {"data", "experiments", "plots"},
+    "run": {"data", "evasion", "experiments", "plots"},
 }
 
 

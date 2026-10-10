@@ -6,7 +6,16 @@ from ids.data import TEST_FILE, TRAIN_FILE, make_split, read_partition
 
 def test_split_drops_id_and_targets(data_dir):
     split = make_split(*read_partition(data_dir), "multiclass")
-    assert list(split.X_train.columns) == ["dur", "sbytes", "sttl", "proto", "service", "state"]
+    assert list(split.X_train.columns) == [
+        "dur",
+        "sbytes",
+        "sttl",
+        "proto",
+        "service",
+        "state",
+        "dttl",
+        "ct_state_ttl",
+    ]
     assert set(split.y_train) == {"Normal", "Exploits", "Worms"}
 
 
