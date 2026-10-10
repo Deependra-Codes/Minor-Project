@@ -12,12 +12,11 @@ from sklearn.preprocessing import QuantileTransformer
 from ids.adapt import em_attack_share, prior_shift, query_uncertain, tune_class_bias
 from ids.ceiling import identifiability
 from ids.data import NORMAL, Split, Task, make_split, target
-from ids.metrics import per_class_recall, score
-from ids.models import MODELS
+from ids.metrics import per_class_f1, per_class_recall, score
+from ids.models import MODELS, SEED, fit
 from ids.plots import conflict_chart, confusion, recall_gain, selection_curve, zero_day_chart
 from ids.selection import METHODS, rank_features
 
-SEED = 42
 KS = (5, 10, 15, 20, 30)
 SELECTION_MODEL = "HistGB"  # fast enough for 36 refits; the ranking, not the model, is under test
 FINAL_MODEL = "XGBoost"
@@ -26,12 +25,9 @@ EPS = 1e-12
 
 
 def fit_proba(name: str, X_train: pd.DataFrame, y_train: pd.Series, X_test: pd.DataFrame, weight=None):
-    """Fit on integer class indices. Returns classes, test probabilities, fit seconds, predict µs per row."""
-    classes = np.unique(y_train)
-    model = MODELS[name](SEED)
+    """Returns classes, test probabilities, fit seconds, predict µs per row."""
     start = perf_counter()
-    extra = {} if weight is None else {"sample_weight": weight}  # a Pipeline rejects sample_weight=None
-    model.fit(X_train, np.searchsorted(classes, y_train), **extra)
+    model, classes = fit(name, X_train, y_train, weight)
     fit_s = perf_counter() - start
     start = perf_counter()
     proba = model.predict_proba(X_test)
@@ -48,15 +44,16 @@ def evaluate(name: str, split: Split, columns: list[str]) -> tuple[dict, np.ndar
 
 
 def baselines(split: Split, task: Task, out: Path) -> list[dict]:
-    """Every model on all features, plus per-class recall."""
-    rows, recalls = [], {}
+    """Every model on all features, plus per-class recall and F1 (F1 is what the ceilings bound)."""
+    rows, recalls, f1s = [], {}, {}
     for name in MODELS:
         row, pred = evaluate(name, split, list(split.X_train.columns))
         rows.append({"task": task, "selection": "none"} | row)
-        recalls[name] = per_class_recall(split.y_test, pred)
-    pd.DataFrame(recalls).rename_axis("class").to_csv(
-        out / f"per_class_recall_{task}.csv", float_format="%.4f"
-    )
+        recalls[name], f1s[name] = per_class_recall(split.y_test, pred), per_class_f1(split.y_test, pred)
+    for kind, table in (("recall", recalls), ("f1", f1s)):
+        pd.DataFrame(table).rename_axis("class").to_csv(
+            out / f"per_class_{kind}_{task}.csv", float_format="%.4f"
+        )
     return rows
 
 
@@ -141,15 +138,14 @@ def improve(split: Split, task: Task, out: Path, per_round: int) -> tuple[list[d
 
 
 def ceiling(split: Split, task: Task, out: Path) -> dict:
-    """Best possible test score with these features; the multiclass run also plots per-class conflicts."""
+    """Best possible test scores with these features; the multiclass run also plots per-class conflicts."""
     result = identifiability(split.X_test, split.y_test)
     if task == "multiclass":
         conflict_chart(result["conflict_share"], out / "conflict.png")
-    return (
-        {"task": task}
-        | {k: v for k, v in result.items() if k != "conflict_share"}
-        | {f"conflict_{c}": v for c, v in result["conflict_share"].items()}
-    )
+    flat = {k: v for k, v in result.items() if not isinstance(v, dict)}
+    for key, prefix in (("f1_ceiling", "f1_ceiling"), ("conflict_share", "conflict")):
+        flat |= {f"{prefix}_{c}": v for c, v in result[key].items()}
+    return {"task": task} | flat
 
 
 def zero_day(train: pd.DataFrame, test: pd.DataFrame, out: Path) -> list[dict]:

@@ -37,8 +37,21 @@ def test_end_to_end_writes_every_output(data_dir, tmp_path):
         "feedback_curve.csv",
         "feedback.png",
         "ttl_shift.csv",
+        "per_class_f1_multiclass.csv",
+        "ttl_free.csv",
+        "recall_ttl_free.csv",
+        "substitution.csv",
+        "ttl_attribution.csv",
+        "ttl_sweep.png",
     ]:
         assert (out / name).exists(), name
+    ceiling = pd.read_csv(out / "ceiling.csv")
+    assert (ceiling["macro_f1_lower"] <= ceiling["macro_f1_upper"]).all()
+    assert (ceiling["majority_macro_f1"] <= ceiling["macro_f1_upper"]).all()
+    assert len(pd.read_csv(out / "ttl_sweep.csv")) == 256 * 2  # every TTL value, two binary models
+    evasion = pd.read_csv(out / "evasion.csv")
+    no_ttl = evasion[evasion["features"] == "no_ttl"]
+    assert len(no_ttl) and (no_ttl["detection"] == no_ttl["clean_detection"]).all()  # immune by construction
     diagnosis = pd.read_csv(out / "diagnosis.csv").iloc[0]
     assert diagnosis["false_alarms"] <= diagnosis["normal_flows"]
     for share in ("fa_train_neighbour_attack_share", "ok_train_neighbour_attack_share"):
