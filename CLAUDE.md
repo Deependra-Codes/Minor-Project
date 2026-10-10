@@ -3,14 +3,14 @@
 Guide: Dr. Bharat Singh (Asst. Prof., CSE). Guide keywords: medicinal plant identification,
 medicinal leaf classification, feature selection + ML, dynamic intrusion detection.
 
-## LOCKED TARGET
-Topic: medicinal leaf classification with deep features + feature selection + classic ML.
-Claim: same accuracy with far fewer features, faster prediction. Not "higher accuracy" (papers already ~99.8%).
-Data: Mendeley Medicinal Leaf Dataset, Roopashree & Anitha 2020, DOI 10.17632/nnytj2v3n5.1, 30 species, ~1,800 images, CC BY 4.0.
-Same data as MedPlantNet (notes/medplantnet.md, 99.87%), so direct comparison.
-Code: `leaf_fs.py` (EfficientNetB0 ImageNet features -> ANOVA-F / mutual info / PCA -> SVM; plus KNN, RF, LogReg on all features).
-First deliverable (2 days from 2026-10-10): synopsis + first result.
-Network: data.mendeley.com blocked in cloud env; run on Colab or ask user to allow host.
+## LOCKED TARGET (2026-10-10)
+Topic: network intrusion detection, feature selection + classic ML, UNSW-NB15 official train/test split.
+Claim: fair same-protocol comparison of ANOVA-F / mutual info / RF importance; fewer features, same macro-F1; per-class recall for rare attacks. Not "beat SOTA".
+Code: `ids/` package, rules in AGENTS.md, gate `ruff check . && ruff format --check . && pytest -q`.
+Docs: `docs/research.md` (problem, verified literature, gap, plan), `docs/ppt-content.md` (slide brief for another AI).
+First deliverable (by 2026-10-12): synopsis + first result.
+Data: data/UNSW_NB15_{training,testing}-set.csv, gitignored. UNSW site, Zenodo, HF, Mendeley blocked in cloud env: user uploads CSVs or runs on Colab.
+Old leaf topic dropped; script in git history (a4f7faf).
 
 Paper sources: ScienceDirect, IEEE Xplore, MDPI.
 

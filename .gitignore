@@ -1,3 +1,9 @@
 papers/*.pdf
 papers/txt/*.txt
-results/features.npz
+data/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+build/
