@@ -8,7 +8,7 @@ Engineering rules for this repo. Ruff and pytest enforce most of them. The rest 
 |---|---|---|
 | `ids/data.py` | Reading the two official CSVs, schema check, target, encoding | nothing |
 | `ids/models.py` | Classifier factory and every hyperparameter | nothing |
-| `ids/adapt.py` | Label-free test-time adjustments: EM prior shift, macro-F1 class bias | nothing |
+| `ids/adapt.py` | Test-time adjustments: EM prior shift, macro-F1 class bias, which flows an analyst labels next | nothing |
 | `ids/ceiling.py` | Identifiability ceiling: best score any model can reach on these features | nothing |
 | `ids/plots.py` | Report figures and their colors | nothing |
 | `ids/metrics.py` | Scores for one prediction | `data` |
