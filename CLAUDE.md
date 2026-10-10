@@ -14,7 +14,7 @@ Use `caveman` skill for chat replies and `ponytail` skill for code, every sessio
 Both live in `.claude/skills/`.
 
 ## Token rules
-- PDFs go in `papers/`. Never read a PDF whole into context.
+- PDFs go in `papers/` (gitignored: publisher copyright). Never read a PDF whole into context.
 - Extract once: `pdftotext -layout papers/X.pdf papers/txt/X.txt`, then grep/read only needed parts.
 - Write one short summary per paper in `notes/X.md` (problem, dataset, method, features, accuracy, gaps).
 - Later sessions read `notes/`, not PDFs.
