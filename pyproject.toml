@@ -7,7 +7,7 @@ name = "ids-fs"
 version = "0.1.0"
 description = "Intrusion detection on UNSW-NB15: feature selection + classic ML on the official split"
 requires-python = ">=3.10"
-dependencies = ["numpy", "pandas", "scikit-learn>=1.4", "matplotlib"]
+dependencies = ["numpy", "pandas", "scikit-learn>=1.4", "matplotlib", "xgboost>=2"]
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]

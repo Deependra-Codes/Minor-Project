@@ -7,11 +7,14 @@ import pytest
 
 ALLOWED = {
     "data": set(),
-    "metrics": {"data"},
     "models": set(),
     "plots": set(),
+    "adapt": set(),
+    "ceiling": set(),
+    "metrics": {"data"},
     "selection": {"data"},
-    "run": {"data", "metrics", "models", "plots", "selection"},
+    "experiments": {"adapt", "ceiling", "data", "metrics", "models", "plots", "selection"},
+    "run": {"data", "experiments", "plots"},
 }
 
 

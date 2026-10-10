@@ -84,9 +84,9 @@ def pipeline(path: Path) -> None:
     steps = [
         ("Official CSVs", "175,341 train\n82,332 test"),
         ("Preprocess", "drop row id; encode\nprotocol, service, state"),
-        ("Rank features", "ANOVA-F · Mutual Info\n· RF importance"),
-        ("Select top-k", "k = 5, 10, 15,\n20, 30, 42"),
-        ("Train classifier", "LR · DT · RF · HistGB\n± class weights"),
+        ("Train XGBoost", "all 42 features;\n5-fold out-of-fold copy"),
+        ("Rare-class bias", "per-class offsets tuned\nfor macro-F1 on train"),
+        ("Prior shift", "EM estimates the live\nattack share, no labels"),
         ("Evaluate once", "on the untouched\ntest file"),
     ]
     fig, ax = plt.subplots(figsize=(13, 3.0))
@@ -102,7 +102,7 @@ def pipeline(path: Path) -> None:
             _arrow(ax, (x + w + 0.04, 1.17), (x + w + gap - 0.04, 1.17))
     left, right = 1 * (w + gap), 4 * (w + gap) + w
     ax.plot([left, left, right, right], [0.42, 0.3, 0.3, 0.42], color=NAVY, lw=1.4)
-    ax.text((left + right) / 2, 0.12, "fitted on training data only", ha="center", fontsize=11, color=NAVY)
+    ax.text((left + right) / 2, 0.12, "never sees a test label", ha="center", fontsize=11, color=NAVY)
     ax.set_xlim(-0.1, 6 * w + 5 * gap + 0.1)
     ax.set_ylim(0, 1.9)
     ax.axis("off")
@@ -181,27 +181,9 @@ def timeline(path: Path) -> None:
     _save(fig, path)
 
 
-def title_background(path: Path) -> None:
-    """Navy 16:9 backdrop with a faint flow network; three orange nodes stand for the rare attacks."""
-    rng = np.random.default_rng(7)
-    pts = rng.random((70, 2)) * [5.6, 7.5] + [7.73, 0]
-    fig = plt.figure(figsize=(13.33, 7.5), facecolor=NAVY)
-    ax = fig.add_axes([0, 0, 1, 1], facecolor=NAVY)
-    for p in pts:
-        for q in pts[np.argsort(np.linalg.norm(pts - p, axis=1))[1:4]]:
-            ax.plot(*zip(p, q, strict=True), color=BLUE, alpha=0.28, lw=0.8)
-    ax.scatter(*pts.T, s=14, color="white", alpha=0.55, lw=0)
-    ax.scatter(*pts[[11, 37, 58]].T, s=40, color=ORANGE, lw=0)
-    ax.set_xlim(0, 13.33)
-    ax.set_ylim(0, 7.5)
-    ax.axis("off")
-    fig.savefig(path, dpi=200, facecolor=NAVY)
-    plt.close(fig)
-
-
 def main(out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
-    for make in (class_distribution, pipeline, zero_day, timeline, title_background):
+    for make in (class_distribution, pipeline, zero_day, timeline):
         make(out / f"{make.__name__}.png")
         print(f"wrote {out / make.__name__}.png")
 

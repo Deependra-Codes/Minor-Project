@@ -8,10 +8,13 @@ Engineering rules for this repo. Ruff and pytest enforce most of them. The rest 
 |---|---|---|
 | `ids/data.py` | Reading the two official CSVs, schema check, target, encoding | nothing |
 | `ids/models.py` | Classifier factory and every hyperparameter | nothing |
+| `ids/adapt.py` | Label-free test-time adjustments: EM prior shift, macro-F1 class bias | nothing |
+| `ids/ceiling.py` | Identifiability ceiling: best score any model can reach on these features | nothing |
 | `ids/plots.py` | Report figures and their colors | nothing |
 | `ids/metrics.py` | Scores for one prediction | `data` |
 | `ids/selection.py` | Feature ranking methods | `data` |
-| `ids/run.py` | CLI, experiment order, writing `results/` | all of the above |
+| `ids/experiments.py` | The five experiments; each returns rows and saves its figures | all of the above |
+| `ids/run.py` | CLI, experiment order, writing `results/` | `data`, `experiments` |
 
 `scripts/slide_figures.py` draws the slide visuals that need no results into `docs/assets/`. It imports nothing from `ids`.
 
@@ -20,7 +23,7 @@ Imports go downward only. `tests/test_boundaries.py` fails the build on an upwar
 ## Non-negotiable
 
 - **Official split only.** Train on `UNSW_NB15_training-set.csv`, test on `UNSW_NB15_testing-set.csv`. Never pool and re-split them: random re-splits inflate scores and make the numbers incomparable with the literature.
-- **Everything fitted is fitted on train only:** encoders, scalers, feature rankings. The test file is used once, for prediction.
+- **No step reads a test label.** Encoders, rankings, models and class biases are fitted on train only. The prior shift reads unlabeled test features, as a deployed detector would read live traffic. Test labels are used once, for scoring.
 - **`id` is never a feature.** It is a row number.
 - **Report macro-F1 and per-class recall, never accuracy alone.** Accuracy hides Worms (130 training rows) and Backdoor.
 - **Seed 42 everywhere.** A number that changes on re-run is not a result.

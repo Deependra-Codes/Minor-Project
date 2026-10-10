@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import matplotlib
+import matplotlib.ticker
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -14,6 +15,7 @@ from sklearn.metrics import confusion_matrix  # noqa: E402
 SERIES = {"anova_f": ("#2a78d6", "o"), "mutual_info": ("#eb6834", "s"), "rf_importance": ("#1baf7a", "^")}
 INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e4e3df"
 BLUES = LinearSegmentedColormap.from_list("blues", ["#fcfcfb", "#86b6ef", "#2a78d6", "#0d366b"])
+plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Inter", "DejaVu Sans"]})
 
 
 def _style(ax: plt.Axes, title: str) -> None:
@@ -62,5 +64,109 @@ def confusion(y_true: pd.Series, y_pred: np.ndarray, path: Path, title: str) -> 
     ax.set_xlabel("predicted", color=MUTED)
     ax.set_ylabel("true (each row sums to 1 = recall)", color=MUTED)
     _style(ax, title)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def _hbar_axes(ax: plt.Axes, labels: list[str], title: str, xlabel: str) -> None:
+    ax.set_yticks(range(len(labels)), labels)
+    ax.set_xlim(0, 1.08)
+    ax.set_xlabel(xlabel, color=MUTED)
+    ax.grid(axis="x", color=GRID, lw=0.8)
+    ax.set_axisbelow(True)
+    ax.tick_params(length=0)
+    _style(ax, title)
+    ax.spines["left"].set_visible(False)
+
+
+def recall_gain(base: dict[str, float], final: dict[str, float], path: Path, title: str) -> None:
+    """Dumbbell per class: grey dot = baseline recall, blue dot = improved recall."""
+    labels = sorted(base, key=base.get)
+    fig, ax = plt.subplots(figsize=(7.2, 0.9 + 0.42 * len(labels)))
+    for i, c in enumerate(labels):
+        ax.plot([base[c], final[c]], [i, i], color=GRID, lw=3, solid_capstyle="round", zorder=1)
+        ax.text(
+            min(final[c], base[c]) - 0.02,
+            i,
+            f"{base[c]:.2f}",
+            ha="right",
+            va="center",
+            fontsize=8,
+            color=MUTED,
+        )
+        ax.text(
+            max(final[c], base[c]) + 0.02, i, f"{final[c]:.2f}", ha="left", va="center", fontsize=8, color=INK
+        )
+    ax.scatter([base[c] for c in labels], range(len(labels)), s=55, color=MUTED, zorder=2, label="baseline")
+    ax.scatter(
+        [final[c] for c in labels],
+        range(len(labels)),
+        s=55,
+        color=SERIES["anova_f"][0],
+        zorder=3,
+        label="improved",
+    )
+    _hbar_axes(ax, labels, title, "recall on the official test set")
+    ax.legend(frameon=False, loc="lower right", labelcolor=INK)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def zero_day_chart(rows: pd.DataFrame, path: Path) -> None:
+    """Detection of each attack type when it was in training (blue) vs held out of training (orange)."""
+    rows = rows.sort_values("detection_unseen")
+    y = np.arange(len(rows))
+    fig, ax = plt.subplots(figsize=(7.2, 0.9 + 0.5 * len(rows)))
+    for offset, col, color, label in (
+        (0.19, "detection_seen", SERIES["anova_f"][0], "seen in training"),
+        (-0.19, "detection_unseen", SERIES["mutual_info"][0], "never seen (zero-day)"),
+    ):
+        ax.barh(y + offset, rows[col], height=0.36, color=color, label=label)
+        for yi, v in zip(y + offset, rows[col], strict=True):
+            ax.text(v + 0.01, yi, f"{v:.2f}", va="center", fontsize=8, color=INK)
+    _hbar_axes(
+        ax,
+        list(rows["held_out"]),
+        "Detection rate: seen vs never-seen attack type",
+        "share flagged as attack",
+    )
+    ax.legend(frameon=False, loc="lower right", labelcolor=INK)
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def conflict_chart(share: dict[str, float], path: Path) -> None:
+    """Share of each class's test rows whose exact feature vector also carries another label."""
+    labels = sorted(share, key=share.get)
+    fig, ax = plt.subplots(figsize=(7.2, 0.9 + 0.42 * len(labels)))
+    ax.barh(range(len(labels)), [share[c] for c in labels], height=0.62, color=SERIES["anova_f"][0])
+    for i, c in enumerate(labels):
+        ax.text(share[c] + 0.01, i, f"{share[c]:.0%}", va="center", fontsize=8.5, color=INK)
+    _hbar_axes(ax, labels, "Test rows identical to a row of another class", "share of the class's test rows")
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
+def feedback_chart(curve: pd.DataFrame, path: Path) -> None:
+    """False-alarm rate after each round of analyst labels, one line per task."""
+    fig, ax = plt.subplots(figsize=(7.2, 4.0))
+    for (task, rows), (color, marker) in zip(curve.groupby("task"), list(SERIES.values()), strict=False):
+        ax.plot(rows["labels"], rows["false_alarm_rate"], color=color, marker=marker, lw=2, ms=6, label=task)
+        last = rows.iloc[-1]
+        ax.text(
+            last["labels"] + 15,
+            last["false_alarm_rate"],
+            f"{last['false_alarm_rate']:.1%}",
+            va="center",
+            fontsize=9,
+            color=INK,
+        )
+    ax.set_xticks(sorted(curve["labels"].unique()))
+    ax.grid(axis="y", color=GRID, lw=0.8)
+    ax.set_xlabel("test-day flows labelled by an analyst", color=MUTED)
+    ax.set_ylabel("false-alarm rate on unlabelled flows", color=MUTED)
+    ax.yaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0, decimals=0))
+    ax.legend(frameon=False, labelcolor=INK)
+    _style(ax, "False alarms fall as an analyst labels the least certain flows")
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
