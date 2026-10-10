@@ -46,6 +46,7 @@ def _brute_force(G):
 
 def test_bracket_contains_the_brute_force_optimum():
     rng = np.random.default_rng(42)
+    gaps = []
     for _ in range(300):
         g = int(rng.integers(1, 8))
         G = rng.integers(0, 12, size=(g, 3)) * (rng.random((g, 3)) < 0.6) * rng.choice([1, 1, 5], size=(g, 1))
@@ -58,3 +59,6 @@ def test_bracket_contains_the_brute_force_optimum():
         ceilings = class_f1_ceilings(G)
         assert lower <= exact + 1e-12 <= ceilings.mean() + 2e-12
         assert np.allclose(ceilings, per_class, atol=1e-12)
+        gaps.append(exact - lower)
+    # the search finds the optimum almost always; without either stage it misses 20 or more of these
+    assert sum(g > 1e-9 for g in gaps) <= 10

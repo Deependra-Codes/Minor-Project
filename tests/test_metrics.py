@@ -26,3 +26,5 @@ def test_per_class_f1_scores_every_true_class():
     y_pred = np.array(["Normal", "Normal", "Worms", "Worms"])
     out = per_class_f1(y_true, y_pred)
     assert out == pytest.approx({"Normal": 0.8, "Worms": 2 / 3})
+    never_predicted = per_class_f1(y_true, np.array(["Normal"] * 4))
+    assert never_predicted == pytest.approx({"Normal": 6 / 7, "Worms": 0.0})

@@ -2,7 +2,7 @@
 
 Minor project, CSE, IIIT Ranchi. Guide: Dr. Bharat Singh.
 
-An intrusion detector trained on one day of traffic and tested on another meets a different traffic mix. This repo measures how much that costs on the **official** UNSW-NB15 split, fixes part of it without reading a test label, cuts false alarms further with a small analyst-feedback loop, and measures the ceiling no model can pass. Six classifiers, three feature-selection methods, label-free adaptation, analyst feedback, a zero-day test.
+An intrusion detector trained on one day of traffic and tested on another meets a different traffic mix. This repo measures how much that costs on the **official** UNSW-NB15 split, fixes part of it without reading a test label, cuts false alarms further with a small analyst-feedback loop, measures the ceiling no model can pass, and shows that one header byte (the source TTL) decides most verdicts. Six classifiers, three feature-selection methods, label-free adaptation, analyst feedback, a zero-day test, a TTL-evasion test.
 
 **Stack:** Python ≥ 3.10 · pandas · scikit-learn · XGBoost · matplotlib. No GPU.
 
@@ -17,7 +17,7 @@ An intrusion detector trained on one day of traffic and tested on another meets 
 | `UNSW_NB15_training-set.csv` | 175,341 | `e55caabaa6cd4a8f1c06a227bcfababc` |
 | `UNSW_NB15_testing-set.csv` | 82,332 | `e0beea40262e46168cdb81476dbc27b4` |
 
-**2. Install and run** (about 25 minutes on 4 CPU cores):
+**2. Install and run** (about 30 minutes on 4 CPU cores):
 
 ```bash
 pip install -e ".[dev]"
@@ -46,11 +46,16 @@ python scripts/slide_content.py
 | `results/improvement.csv` | The headline: XGBoost, + prior shift, + class bias, + both, + analyst feedback, for both tasks; all scored on the test flows no analyst labelled |
 | `results/feedback_curve.csv` | Scores after each round of 200 analyst labels |
 | `results/results.csv` | Every model on all features, and the feature-selection sweep |
-| `results/ceiling.csv` | Best accuracy and macro-F1 any model can reach on the test file |
+| `results/ceiling.csv` | Best accuracy any model can reach, the macro-F1 bracket, and each class's best possible F1 |
+| `results/per_class_f1_*.csv` | Per-class F1 of every model, for the error budget against the ceilings |
+| `results/evasion.csv`, `ttl_sweep.csv` | Detection after rewriting the source TTL of every attack flow (rule values, and every value 0–255) |
+| `results/ttl_free.csv`, `recall_ttl_free.csv` | The detector with all 42 features vs the 39 without TTL |
+| `results/substitution.csv` | Detection after forging one feature (or the worst one plus another) to a typical normal value |
+| `results/ttl_attribution.csv` | Why the false alarms happen: top pro-attack feature per false alarm, and whether 39 features still see the TTL |
 | `results/zero_day.csv` | Detection of each attack type when it was held out of training |
 | `results/recall_gain_*.csv`, `per_class_recall_*.csv` | Per-class recall |
 | `results/ranking_*.csv` | Feature order chosen by each selection method |
-| `results/*.png` | Confusion matrices, per-class recall gain, selection curves, feedback, zero-day and conflict charts |
+| `results/*.png` | Confusion matrices, per-class recall gain, selection curves, feedback, zero-day, conflict and TTL-sweep charts |
 
 ---
 

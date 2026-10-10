@@ -177,6 +177,12 @@ def feedback_chart(curve: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
+def mark_groups(marks: dict[int, str]) -> dict[str, list[int]]:
+    """TTL values per kind of vertical mark, sorted."""
+    kinds = ("normal TTL", "attack TTL")
+    return {kind: sorted(v for v, label in marks.items() if label == kind) for kind in kinds}
+
+
 def ttl_sweep_chart(rows: pd.DataFrame, marks: dict[int, str], path: Path) -> None:
     """Detection when every attack flow's source TTL is set to one value, 0-255, one line per model."""
     fig, ax = plt.subplots(figsize=(7.2, 4.0))
@@ -184,8 +190,8 @@ def ttl_sweep_chart(rows: pd.DataFrame, marks: dict[int, str], path: Path) -> No
     for (model, r), color in zip(rows.groupby("model", sort=False), colors, strict=False):
         ax.plot(r["ttl"], r["detection"], color=color, lw=2, label=model)
     styles = {"normal TTL": "--", "attack TTL": ":"}
-    for kind, ls in styles.items():
-        values = sorted(v for v, label in marks.items() if label == kind)
+    for kind, values in mark_groups(marks).items():
+        ls = styles[kind]
         for value in values:
             ax.axvline(value, color=MUTED, lw=1, ls=ls, zorder=0)
         if values:
