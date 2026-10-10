@@ -13,6 +13,11 @@ from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
 from sklearn.metrics import confusion_matrix  # noqa: E402
 
 SERIES = {"anova_f": ("#2a78d6", "o"), "mutual_info": ("#eb6834", "s"), "rf_importance": ("#1baf7a", "^")}
+METHOD_NAMES = {
+    "anova_f": "ANOVA F-test",
+    "mutual_info": "mutual information",
+    "rf_importance": "RF importance",
+}
 INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e4e3df"
 BLUES = LinearSegmentedColormap.from_list("blues", ["#fcfcfb", "#86b6ef", "#2a78d6", "#0d366b"])
 plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Inter", "DejaVu Sans"]})
@@ -31,7 +36,9 @@ def selection_curve(rows: pd.DataFrame, path: Path, title: str) -> None:
     fig, ax = plt.subplots(figsize=(7, 4.2))
     for method, (color, marker) in SERIES.items():
         r = rows[rows["selection"] == method].sort_values("n_features")
-        ax.plot(r["n_features"], r["macro_f1"], color=color, marker=marker, lw=2, ms=6, label=method)
+        ax.plot(
+            r["n_features"], r["macro_f1"], color=color, marker=marker, lw=2, ms=6, label=METHOD_NAMES[method]
+        )
     ax.set_xticks(sorted(rows["n_features"].unique()))
     ax.grid(axis="y", color=GRID, lw=0.8)
     ax.set_xlabel(f"features kept (of {rows['n_features'].max()})", color=MUTED)
@@ -79,24 +86,22 @@ def _hbar_axes(ax: plt.Axes, labels: list[str], title: str, xlabel: str) -> None
     ax.spines["left"].set_visible(False)
 
 
+def _gain_labels(base: float, final: float, pad: float = 0.02):
+    """(x, ha) of the baseline and final labels, each on the outer side of its own dot."""
+    if final >= base:
+        return (base - pad, "right"), (final + pad, "left")
+    return (base + pad, "left"), (final - pad, "right")
+
+
 def recall_gain(base: dict[str, float], final: dict[str, float], path: Path, title: str) -> None:
     """Dumbbell per class: grey dot = baseline recall, blue dot = improved recall."""
     labels = sorted(base, key=base.get)
     fig, ax = plt.subplots(figsize=(7.2, 0.9 + 0.42 * len(labels)))
     for i, c in enumerate(labels):
         ax.plot([base[c], final[c]], [i, i], color=GRID, lw=3, solid_capstyle="round", zorder=1)
-        ax.text(
-            min(final[c], base[c]) - 0.02,
-            i,
-            f"{base[c]:.2f}",
-            ha="right",
-            va="center",
-            fontsize=8,
-            color=MUTED,
-        )
-        ax.text(
-            max(final[c], base[c]) + 0.02, i, f"{final[c]:.2f}", ha="left", va="center", fontsize=8, color=INK
-        )
+        (base_x, base_ha), (final_x, final_ha) = _gain_labels(base[c], final[c])
+        ax.text(base_x, i, f"{base[c]:.2f}", ha=base_ha, va="center", fontsize=8, color=MUTED)
+        ax.text(final_x, i, f"{final[c]:.2f}", ha=final_ha, va="center", fontsize=8, color=INK)
     ax.scatter([base[c] for c in labels], range(len(labels)), s=55, color=MUTED, zorder=2, label="baseline")
     ax.scatter(
         [final[c] for c in labels],
@@ -130,7 +135,7 @@ def zero_day_chart(rows: pd.DataFrame, path: Path) -> None:
         "Detection rate: seen vs never-seen attack type",
         "share flagged as attack",
     )
-    ax.legend(frameon=False, loc="lower right", labelcolor=INK)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=2, labelcolor=INK)
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)
 

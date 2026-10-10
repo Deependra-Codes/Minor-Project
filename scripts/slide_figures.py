@@ -80,21 +80,22 @@ def class_distribution(path: Path) -> None:
 
 
 def pipeline(path: Path) -> None:
-    steps = [
-        ("Official CSVs", "175,341 train\n82,332 test"),
-        ("Preprocess", "drop row id; encode\nprotocol, service, state"),
-        ("Train XGBoost", "all 42 features;\n5-fold out-of-fold copy"),
-        ("Rare-class bias", "per-class offsets tuned\nfor macro-F1 on train"),
-        ("Prior shift", "EM estimates the live\nattack share, no labels"),
-        ("Evaluate once", "on the untouched\ntest file"),
+    steps = [  # (title, caption, optional)
+        ("Official CSVs", "175,341 train\n82,332 test", False),
+        ("Preprocess", "drop row id; encode\nprotocol, service, state", False),
+        ("Train XGBoost", "all 42 features;\n5-fold out-of-fold copy", False),
+        ("Rare-class bias", "one offset per class,\ntuned for macro-F1", False),
+        ("Prior shift", "EM estimates the live\nattack share, no labels", False),
+        ("Analyst feedback", "optional: 5 rounds of\n200 labelled flows", True),
+        ("Evaluate once", "on the flows\nnobody labelled", False),
     ]
-    fig, ax = plt.subplots(figsize=(13, 3.0))
-    w, gap = 2.1, 0.4
-    for i, (title, caption) in enumerate(steps):
+    fig, ax = plt.subplots(figsize=(16, 3.0))
+    w, gap = 2.2, 0.35
+    for i, (title, caption, optional) in enumerate(steps):
         x = i * (w + gap)
-        _box(ax, x, 0.55, w, 1.25)
+        _box(ax, x, 0.55, w, 1.25, ls="--" if optional else "-")
         ax.text(
-            x + w / 2, 1.45, title, ha="center", va="center", fontsize=12.5, fontweight="semibold", color=NAVY
+            x + w / 2, 1.45, title, ha="center", va="center", fontsize=11.5, fontweight="semibold", color=NAVY
         )
         ax.text(x + w / 2, 0.95, caption, ha="center", va="center", fontsize=9, color=MUTED, linespacing=1.4)
         if i < len(steps) - 1:
@@ -102,7 +103,7 @@ def pipeline(path: Path) -> None:
     left, right = 1 * (w + gap), 4 * (w + gap) + w
     ax.plot([left, left, right, right], [0.42, 0.3, 0.3, 0.42], color=NAVY, lw=1.4)
     ax.text((left + right) / 2, 0.12, "never sees a test label", ha="center", fontsize=11, color=NAVY)
-    ax.set_xlim(-0.1, 6 * w + 5 * gap + 0.1)
+    ax.set_xlim(-0.1, len(steps) * w + (len(steps) - 1) * gap + 0.1)
     ax.set_ylim(0, 1.9)
     ax.axis("off")
     _save(fig, path)
