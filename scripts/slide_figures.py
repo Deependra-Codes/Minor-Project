@@ -10,11 +10,10 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
 from matplotlib.patches import FancyBboxPatch  # noqa: E402
 
 NAVY, BLUE, ORANGE = "#0B1F3A", "#2A78D6", "#EB6834"
-INK, MUTED, LINE, SURFACE, LIGHT = "#1F1F1E", "#6B6A64", "#E4E3DF", "#F5F7FA", "#CDE2FB"
+INK, MUTED, LINE, SURFACE = "#1F1F1E", "#6B6A64", "#E4E3DF", "#F5F7FA"
 plt.rcParams.update({"font.family": "Inter", "font.size": 11, "text.color": INK})
 
 # Official partition, training file. Same table as docs/research.md; ids.run re-checks it on the real data.
@@ -155,35 +154,9 @@ def zero_day(path: Path) -> None:
     _save(fig, path)
 
 
-def timeline(path: Path) -> None:
-    rows = [
-        ("Baselines and feature selection", 0, 1),
-        ("Class weighting, tuning, full-data rankings", 1, 3),
-        ("Leave-one-attack-out experiment", 3, 5),
-        ("Report, presentation, live demo", 5, 6),
-    ]
-    fig, ax = plt.subplots(figsize=(8.2, 3.0))
-    for i, (_, start, end) in enumerate(rows):
-        done = i == 0
-        ax.barh(i, end - start, left=start, height=0.5, color=BLUE if done else LIGHT, edgecolor=BLUE, lw=1.2)
-        if done:
-            ax.text(start + 0.5, i, "code complete", ha="center", va="center", fontsize=8.5, color="white")
-    ax.set_yticks(range(len(rows)), [r[0] for r in rows], fontsize=10.5)
-    ax.set_xticks(np.arange(6) + 0.5, [f"Week {w}" for w in range(1, 7)])
-    ax.set_xticks(range(7), minor=True)
-    ax.grid(axis="x", which="minor", color=LINE, lw=0.8)
-    ax.tick_params(which="both", length=0)
-    ax.tick_params(axis="x", colors=MUTED, labelsize=9.5)
-    ax.set_xlim(0, 6)
-    ax.invert_yaxis()
-    ax.set_axisbelow(True)
-    ax.spines[:].set_visible(False)
-    _save(fig, path)
-
-
 def main(out: Path) -> None:
     out.mkdir(parents=True, exist_ok=True)
-    for make in (class_distribution, pipeline, zero_day, timeline):
+    for make in (class_distribution, pipeline, zero_day):
         make(out / f"{make.__name__}.png")
         print(f"wrote {out / make.__name__}.png")
 

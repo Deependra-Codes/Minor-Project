@@ -10,7 +10,7 @@ TTL testbed shortcut; normal share 31.9% train vs 44.9% test drives a ~26% false
 Method: XGBoost + EM prior shift (no test labels) + macro-F1 class bias tuned on out-of-fold train predictions. Zero-day = leave-one-attack-out.
 Code: `ids/` (rules in AGENTS.md). Gate: `ruff check . && ruff format --check . && pytest -q`. Full run: `python -m ids.run` (~15 min).
 Data: data/UNSW_NB15_{training,testing}-set.csv, gitignored, MD5s in README. Official site, Zenodo, HF, Kaggle blocked here; GitHub mirrors work.
-Deliverables: results/ (numbers + figures), docs/ppt-content.md (slide text only, no design), docs/assets/ (slide figures).
+Deliverables: results/ (numbers + figures), docs/ppt-content.md (slide text only, no design; every number from results/), docs/assets/ (slide figures).
 
 Paper sources: ScienceDirect, IEEE Xplore, MDPI.
 
