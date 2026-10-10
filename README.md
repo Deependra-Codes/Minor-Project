@@ -31,6 +31,12 @@ The first lines printed are the class counts. They must match:
 | train | 56,000 | 40,000 | 33,393 | 18,184 | 12,264 | 10,491 | 2,000 | 1,746 | 1,133 | 130 |
 | test | 37,000 | 18,871 | 11,132 | 6,062 | 4,089 | 3,496 | 677 | 583 | 378 | 44 |
 
+**3. Regenerate the slide text** (every number comes from `results/`):
+
+```bash
+python scripts/slide_content.py
+```
+
 ---
 
 ## What it writes
@@ -54,7 +60,7 @@ The first lines printed are the class counts. They must match:
 ids/          data, models, adapt, ceiling, plots → metrics, selection → experiments → run
 tests/        pytest on synthetic UNSW-shaped data, plus the import-boundary test
 docs/         ppt-content.md (slide text and speaker notes) · assets/ (slide figures)
-scripts/      slide_figures.py: python scripts/slide_figures.py redraws docs/assets/
+scripts/      slide_figures.py redraws docs/assets/ · slide_content.py fills docs/ppt-content.md from results/
 notes/        summaries of the IDS papers the guide shared
 ```
 

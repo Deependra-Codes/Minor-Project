@@ -16,7 +16,7 @@ Engineering rules for this repo. Ruff and pytest enforce most of them. The rest 
 | `ids/experiments.py` | The five experiments; each returns rows and saves its figures | all of the above |
 | `ids/run.py` | CLI, experiment order, writing `results/` | `data`, `experiments` |
 
-`scripts/slide_figures.py` draws the slide visuals that need no results into `docs/assets/`. It imports nothing from `ids`.
+`scripts/slide_figures.py` draws the slide visuals that need no results into `docs/assets/`. `scripts/slide_content.py` fills `scripts/slide_content_template.md` from `results/*.csv` into `docs/ppt-content.md`. Neither imports from `ids`.
 
 Imports go downward only. `tests/test_boundaries.py` fails the build on an upward import. A new module gets a row here and in that test, or the test fails.
 
@@ -27,7 +27,7 @@ Imports go downward only. `tests/test_boundaries.py` fails the build on an upwar
 - **`id` is never a feature.** It is a row number.
 - **Report macro-F1 and per-class recall, never accuracy alone.** Accuracy hides Worms (130 training rows) and Backdoor.
 - **Seed 42 everywhere.** A number that changes on re-run is not a result.
-- **Every result number in a slide, the synopsis or the report comes from `results/*.csv` made by committed code.** No hand-typed numbers.
+- **Every result number in a slide, the synopsis or the report comes from `results/*.csv` made by committed code**, through `scripts/slide_content.py`. No hand-typed numbers.
 
 ## Size
 
