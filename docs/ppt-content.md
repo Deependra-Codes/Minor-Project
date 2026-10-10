@@ -9,7 +9,7 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 ## Slide 1: Title
 
 - **Title:** Shift-Aware Network Intrusion Detection
-- **Subtitle:** Feature selection, label-free adaptation and analyst feedback on the official UNSW-NB15 split
+- **Subtitle:** Feature selection, robustness to a one-byte evasion, and adaptation to traffic shift on the official UNSW-NB15 split
 - Minor Project · Department of Computer Science & Engineering · IIIT Ranchi
 - Guide: Dr. Bharat Singh, Assistant Professor
 - Presented by: [Name, Roll No.] · [Name, Roll No.] · [Name, Roll No.]
@@ -32,7 +32,7 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 ## Slide 3: Research questions
 
 - **Title:** Five questions
-- **RQ1:** Which of the 42 flow features does a detector actually need?
+- **RQ1:** Which of the 42 flow features does a detector need, and which can an attacker forge?
 - **RQ2:** Why does a strong model still fail on the official test set?
 - **RQ3:** How much can be recovered without a single test label?
 - **RQ4:** How much does a small amount of analyst feedback add?
@@ -78,6 +78,7 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 - **Gap 2:** Accuracy and weighted F1 hide the rare attack classes
 - **Gap 3:** None separates model error from limits in the data itself
 - **Gap 4:** None adapts the detector to the shifted traffic mix at test time
+- **Gap 5:** Feature sets are judged on accuracy, never on whether an attacker can forge them
 
 **Speaker notes:** Our contribution follows these gaps: the official protocol, per-class reporting, a measured ceiling, and two adaptation steps.
 
@@ -109,7 +110,7 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
   - Detection rate = TP / (TP + FN): the share of attacks caught
   - False-alarm rate = FP / (FP + TN): the share of normal flows flagged
   - Macro-F1 = mean of the per-class F1 scores: every class counts equally
-- **Reproducibility:** fixed seed 42 · one command · 29 automated tests · CPU only
+- **Reproducibility:** fixed seed 42 · one command · a pytest suite · CPU only
 
 **Speaker notes:** Attack is the positive class. We report macro-F1 because it gives Worms the same weight as Normal.
 
@@ -126,11 +127,38 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
   - Worms is different: rare, but almost never identical to another class
 - **Figure:** `results/conflict.png`
 
-**Speaker notes:** We computed the best possible classifier: it answers each group of identical flows with the group's majority label. Even that classifier tops out at 93.60% accuracy and 0.765 macro-F1. Binary detection has no such limit: its ceiling is 99.99%.
+**Speaker notes:** We computed the best possible classifier: it answers each group of identical flows with the group's majority label. Even that classifier tops out at 93.60% accuracy. Its macro-F1 is only 0.765, because it maximises accuracy, not macro-F1: the best macro-F1 any classifier can reach lies between 0.785 and 0.788. An earlier draft of this project wrongly called 0.765 the ceiling. Binary detection has no such limit: its ceiling is 99.99%.
 
 ---
 
-## Slide 10: Finding 2: why the false alarms happen
+## Slide 10: Finding 1b: the error budget
+
+- **Title:** The data caps two classes; the rest is ours to win
+- **Table (best possible F1 per class vs XGBoost, all 42 features, full test file):**
+
+| Class | Best possible F1 | XGBoost F1 | Gap |
+| --- | ---: | ---: | ---: |
+| Analysis | 0.262 | 0.075 | 0.188 |
+| Backdoor | 0.271 | 0.034 | 0.237 |
+| DoS | 0.679 | 0.205 | 0.474 |
+| Exploits | 0.845 | 0.710 | 0.135 |
+| Fuzzers | 0.885 | 0.376 | 0.509 |
+| Reconnaissance | 0.948 | 0.866 | 0.083 |
+| Worms | 0.989 | 0.456 | 0.533 |
+| Generic | 0.999 | 0.984 | 0.015 |
+| Shellcode | 0.999 | 0.499 | 0.500 |
+| Normal | 1.000 | 0.845 | 0.155 |
+
+- **Points:**
+  - Analysis and Backdoor cannot pass F1 0.262 and 0.271 on these features: those losses belong to the data
+  - Fuzzers, DoS, Shellcode and Worms could reach F1 0.885, 0.679, 0.999 and 0.989, but XGBoost reaches 0.376, 0.205, 0.499 and 0.456: those gaps come from the model and the traffic shift, not from twins
+- **Footnote:** each class's best F1 is reached on its own; they cannot all be reached at once
+
+**Speaker notes:** This turns the ceiling into a to-do list. Where the gap is small, no method can help. Where it is large, it is worth working on, and the next slides go after exactly those classes.
+
+---
+
+## Slide 11: Finding 2: why the false alarms happen
 
 - **Title:** The detector learned the testbed, and the traffic mix moved
 - **Table:**
@@ -152,7 +180,26 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 
 ---
 
-## Slide 11: Results 1: baselines
+## Slide 12: Finding 3: one byte blinds the detector
+
+- **Title:** One header byte decides most verdicts
+- **Figure:** `results/ttl_sweep.png`
+- **Points:**
+  - Rewriting the source TTL of every attack flow to 31, the TTL of 70.5% of normal training flows, drops XGBoost detection from 98.2% to 0.23%, and class-balanced HistGB from 96.8% to 0.15%; no attack type stays above 1.1%
+  - It is not about one value. The sweep over all 256 source TTLs shows three bands:
+    - every TTL from 0 to 61: at most 0.23% of attacks detected (XGBoost), 0.15% (HistGB)
+    - the testbed's own attack TTLs (62, 254): at least 98.3% (XGBoost), 96.4% (HistGB)
+    - every other TTL above 62: typically 77.3% (range 73.6% to 95.9%) (XGBoost), typically 64.8% (range 64.6% to 69.6%) (HistGB)
+  - So the all-feature models lean on which TTLs the testbed's attack machines used: the 39 other features, left untouched by the rewrite, detect 97.9% of attacks on their own (slide 15)
+  - The other normal TTLs from the same training rule: 64: 77.3%
+  - Source TTL is the top pro-attack feature for 96% of the 9,693 false alarms; 99.98% of them carry an attack-host TTL (62, 254)
+- **Footnote:** feature-space simulation: recorded flows are edited, no traffic is regenerated; an attacker sets the initial TTL, while the TTL seen at a sensor also depends on the hop count. `ct_state_ttl`, which UNSW-NB15 derives from the connection state and both TTLs, is re-derived after every edit by a rule learned from the training file (it reproduces 99.83% of the test file's values), so every edited flow is one the feature extractor could produce
+
+**Speaker notes:** Flood et al. (EuroS&P 2024) report that UNSW-NB15's gap between benign and attack traffic comes partly from the TTL and protocol choices in its design; we could not access their full text, so we claim only our own measurements. What we add is the size of the effect on a real detector: one byte the attacker controls hides almost every attack, and the same byte drives the false alarms of slide 11.
+
+---
+
+## Slide 13: Results 1: baselines
 
 - **Title:** No single model wins
 - **Table (all 42 features, full test file):**
@@ -174,7 +221,7 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 
 ---
 
-## Slide 12: Results 2: feature selection
+## Slide 14: Results 2: feature selection
 
 - **Title:** 5 features do the work of 42
 - **Points:**
@@ -188,7 +235,30 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 
 ---
 
-## Slide 13: Results 3: the improvement
+## Slide 15: Results 2b: feature selection for robustness
+
+- **Title:** Dropping three TTL fields buys robustness, not fewer false alarms
+- **Table (binary XGBoost unless stated, full test file):**
+
+|  | All 42 features | 39 features, no TTL |
+| --- | ---: | ---: |
+| Attacks detected | 98.2% | 97.9% |
+| False alarms | 26.2% | 26.6% |
+| 10-class macro-F1 (XGBoost) | 0.505 | 0.493 |
+| Detected after TTL := 31 | 0.2% | 97.9% |
+| Worst single forged feature | `sttl`: 0.2% | `ackdat`: 80.3% |
+| Worst forged pair | `sttl+sinpkt`: 0.0% | `ackdat+dload`: 54.5% |
+
+- **Points:**
+  - Without the three TTL fields the detector is immune to the TTL rewrite by construction; the forgery rows show what an attacker would have to forge instead
+  - False alarms do not fall (26.2% with TTL, 26.6% without): the other 39 features still recognise the testbed's attack hosts (AUC 0.999)
+  - Without TTL, 51.0% of normal flows that carry an attack-host TTL are flagged, against 0.4% of the other normal flows
+
+**Speaker notes:** Feature selection is usually judged on accuracy alone. Here the question is what an attacker can forge. Removing TTL costs little and removes the one-byte evasion, but it does not remove the false alarms, because the testbed's fingerprint is spread across many features. Like the baseline table, this table scores all 82,332 test flows; the improvement ladder scores only the 81,332 flows no analyst labelled, which is why the same XGBoost baseline reads 26.2% here and 25.3% there.
+
+---
+
+## Slide 16: Results 3: the improvement
 
 - **Title:** False alarms down, macro-F1 up
 - **Table (scored on the 81,332 test flows no analyst labelled):**
@@ -208,11 +278,11 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 - Cost: 1,000 analyst labels, 1.2% of the test traffic
 - **Figure:** `results/feedback.png`
 
-**Speaker notes:** The label-free steps already raise macro-F1 and cut false alarms. Analyst feedback brings the biggest cut in false alarms and the biggest gain in accuracy, because each round asks about the flows the model is least sure of; the rare-class bias brings the biggest gain in macro-F1. Binary false alarms by round: 26.2% → 23.7% → 21.9% → 20.2% → 19.2% → 18.2%. In binary the rare-class bias settles at zero and changes nothing, and the class-balanced model from slide 11 remains the best binary detector without labels.
+**Speaker notes:** The label-free steps already raise macro-F1 and cut false alarms. Analyst feedback brings the biggest cut in false alarms and the biggest gain in accuracy, because each round asks about the flows the model is least sure of; the rare-class bias brings the biggest gain in macro-F1. Binary false alarms by round: 26.2% → 23.7% → 21.9% → 20.2% → 19.2% → 18.2%. In binary the rare-class bias settles at zero and changes nothing, and the class-balanced model from slide 13 remains the best binary detector without labels.
 
 ---
 
-## Slide 14: Results 4: rare classes
+## Slide 17: Results 4: rare classes
 
 - **Title:** Rare attacks become visible
 - **Table (10-class recall, baseline vs final):**
@@ -236,7 +306,7 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 
 ---
 
-## Slide 15: Results 5: zero-day attacks
+## Slide 18: Results 5: zero-day attacks
 
 - **Title:** Most attack types are caught even when never seen
 - **Table (binary detector, one attack type removed from training each time):**
@@ -256,15 +326,16 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 - **Point:** 8 of 9 attack types are still detected at 90% or more without a single training example; the hardest is Fuzzers (41.3%)
 - **Figure:** `results/zero_day.png` · concept: `docs/assets/zero_day.png`
 
-**Speaker notes:** This is the dynamic-detection test. A detector that only memorised attack signatures would fail here. Most types are still flagged, because they behave unlike normal traffic. Fuzzers is the exception, and it is also what the false alarms are read as (slide 10): it is the attack that looks most like normal traffic.
+**Speaker notes:** This is the dynamic-detection test. A detector that only memorised attack signatures would fail here. Most types are still flagged, because they behave unlike normal traffic. Fuzzers is the exception, and it is also what the false alarms are read as (slide 11): it is the attack that looks most like normal traffic.
 
 ---
 
-## Slide 16: Conclusion
+## Slide 19: Conclusion
 
 - **Title:** What this project shows
 - The traffic mix drives the false alarms: class balancing alone cuts HistGB's binary false alarms from 26.6% to 15.7%, with no labels
-- Some classes have a hard ceiling: most Analysis, Backdoor and DoS test flows have an identical twin in another class; no model passes 93.60% 10-class accuracy
+- Some classes have a hard ceiling: no model passes 93.60% 10-class accuracy or about 0.788 macro-F1, and Analysis and Backdoor are capped near F1 0.262
+- One header byte decides most verdicts: rewriting the source TTL hides all but 0.23% of attacks from XGBoost; a 39-feature detector without TTL resists it at little cost
 - Final 10-class system: macro-F1 0.506 → 0.575, Worms recall 0.395 → 0.814, false alarms 23.9% → 18.4%
 - 5 flow-size and rate features carry almost all the signal of 42
 
@@ -272,19 +343,21 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 
 ---
 
-## Slide 17: Limitations and next steps
+## Slide 20: Limitations and next steps
 
 - **Title:** Limitations and next steps
 - One dataset; next is a cross-dataset test, for example CIC-IDS2017
 - Analyst feedback is simulated with the true test labels, and its settings (weight 20, 200 flows per round) were fixed by hand
 - One split and one seed; feature order alone moves 10-class macro-F1 by about ±0.01
-- Next: feedback on top of the class-balanced model, and streaming evaluation where feedback arrives over time
+- The TTL rewrite is a feature-space simulation, and the forgery test changes at most two features without checking that the forged flow still works as an attack
+- Some design choices (the TTL rule, the round size) were made after earlier looks at the test file
+- Next, for the major project: feedback on top of the class-balanced model, a drift alarm on real traffic streams, constrained adversarial flows, and a second dataset such as NSL-KDD or CIC-IDS2017
 
 **Speaker notes:** These are honest limits, not hidden ones. Each next step extends the same pipeline.
 
 ---
 
-## Slide 18: References
+## Slide 21: References
 
 1. N. Moustafa and J. Slay, "UNSW-NB15: A comprehensive data set for network intrusion detection systems (UNSW-NB15 network data set)," in *Proc. MilCIS*, 2015.
 2. S. M. Kasongo and Y. Sun, "Performance analysis of intrusion detection systems using a feature selection method on the UNSW-NB15 dataset," *Journal of Big Data*, vol. 7, art. 105, 2020.
@@ -294,10 +367,11 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 6. M. Saerens, P. Latinne and C. Decaestecker, "Adjusting the outputs of a classifier to new a priori probabilities: a simple procedure," *Neural Computation*, vol. 14, no. 1, 2002.
 7. T. Chen and C. Guestrin, "XGBoost: A scalable tree boosting system," in *Proc. ACM SIGKDD*, 2016.
 8. B. Settles, "Active learning literature survey," Computer Sciences Technical Report 1648, University of Wisconsin–Madison, 2009.
+9. R. Flood, G. Engelen, D. Aspinall *et al.*, "Bad design smells in benchmark NIDS datasets," in *Proc. IEEE European Symposium on Security and Privacy (EuroS&P)*, 2024, pp. 658–675.
 
 ---
 
-## Slide 19: Thank you
+## Slide 22: Thank you
 
 - **Title:** Thank you
 - Questions and suggestions are welcome
@@ -318,4 +392,6 @@ Every number here comes from `results/*.csv`, produced by `python -m ids.run` on
 
 **What is the ceiling?** If two flows have identical features but different labels, no model can get both right. Answering each identical group with its majority label gives the best possible score: 93.60% accuracy for 10 classes.
 
-**What is new here?** A measured ceiling, a diagnosis of where the false alarms come from, and two adaptation steps, all under the official protocol.
+**Is the TTL finding new?** The TTL artefact in UNSW-NB15 is known (Flood et al., 2024). What we add is the measured evasion on the official split, the attribution of the false alarms, and the measured cost of a detector without TTL.
+
+**What is new here?** A corrected ceiling with a per-class error budget, a one-byte evasion test with its fix, a diagnosis of where the false alarms come from, and two adaptation steps, all under the official protocol.

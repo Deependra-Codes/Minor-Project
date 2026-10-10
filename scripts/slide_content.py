@@ -130,14 +130,17 @@ def ceiling(ceil: pd.DataFrame, f1: pd.DataFrame) -> dict:
 
 
 def sweep(rows: pd.DataFrame, attr: pd.Series) -> dict:
-    """Worst and best detection over every source TTL below the lowest attack-host TTL."""
-    lowest = min(int(v) for v in str(attr["attack_ttls"]).split())
-    below = rows[rows["ttl"] < lowest].groupby("model")["detection"].max()
-    return {
-        "sweep_cut": lowest,
-        "sweep_xgb_max": pct(below["XGBoost"], 2),
-        "sweep_hgb_max": pct(below["HistGB-balanced"], 2),
-    }
+    """Detection in three bands of source TTL: below the attack hosts, at them, and every other value."""
+    hosts = [int(v) for v in str(attr["attack_ttls"]).split()]
+    below = rows[rows["ttl"] < min(hosts)].groupby("model")["detection"].max()
+    at = rows[rows["ttl"].isin(hosts)].groupby("model")["detection"].min()
+    rest = rows[(rows["ttl"] > min(hosts)) & ~rows["ttl"].isin(hosts)].groupby("model")["detection"]
+    out = {"sweep_cut": min(hosts), "sweep_below": min(hosts) - 1}
+    for model, key in (("XGBoost", "xgb"), ("HistGB-balanced", "hgb")):
+        out |= {f"sweep_{key}_max": pct(below[model], 2), f"sweep_{key}_hosts": pct(at[model])}
+        span = f"{pct(rest.min()[model])} to {pct(rest.max()[model])}"
+        out[f"sweep_{key}_rest"] = f"typically {pct(rest.median()[model])} (range {span})"
+    return out
 
 
 def ttl(ev: pd.DataFrame, attr: pd.Series) -> dict:
@@ -157,7 +160,7 @@ def ttl(ev: pd.DataFrame, attr: pd.Series) -> dict:
         "ttl_other": "; ".join(f"{v}: {pct(only.loc[('XGBoost', 'all', v), 'detection'])}" for v in others),
         "ct_match": pct(attr["ct_rule_test_match"], 2),
         "fa_sttl_share": pct(attr["fa_top_feature_sttl_share"], 0),
-        "fa_host_share": pct(attr["fa_attack_ttl_share"], 0),
+        "fa_host_share": pct(attr["fa_attack_ttl_share"], 2),
         "attack_ttls": ", ".join(str(attr["attack_ttls"]).split()),
         "proxy_auc": f3(attr["no_ttl_recovers_attack_ttl_auc"]),
     }
@@ -190,6 +193,7 @@ def robustness(ev: pd.DataFrame, free: pd.DataFrame, sub: pd.DataFrame, mode: in
     rows = [[label, cells["all"][i], cells["no_ttl"][i]] for i, label in enumerate(labels)]
     return {
         "robust_table": table(["", "All 42 features", "39 features, no TTL"], rows),
+        "nottl_dr": pct(fb.loc["no_ttl", "detection_rate"]),
         "far_all": pct(fb.loc["all", "false_alarm_rate"]),
         "far_nottl": pct(fb.loc["no_ttl", "false_alarm_rate"]),
         "far_nottl_hosts": pct(fb.loc["no_ttl", "far_attack_ttl_normals"]),

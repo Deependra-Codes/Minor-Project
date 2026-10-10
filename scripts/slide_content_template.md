@@ -170,7 +170,11 @@ $ttl_table
 - **Figure:** `results/ttl_sweep.png`
 - **Points:**
   - Rewriting the source TTL of every attack flow to $ttl_mode, the TTL of $ttl_mode_share of normal training flows, drops XGBoost detection from $xgb_clean_dr to $xgb_mode_dr, and class-balanced HistGB from $hgb_clean_dr to $hgb_mode_dr; no attack type stays above $mode_max_type
-  - It is not about one value: for every source TTL from 0 to $sweep_cut − 1, detection stays at or below $sweep_xgb_max (XGBoost) and $sweep_hgb_max (HistGB); the models learned "TTL ≥ $sweep_cut means attack"
+  - It is not about one value. The sweep over all 256 source TTLs shows three bands:
+    - every TTL from 0 to $sweep_below: at most $sweep_xgb_max of attacks detected (XGBoost), $sweep_hgb_max (HistGB)
+    - the testbed's own attack TTLs ($attack_ttls): at least $sweep_xgb_hosts (XGBoost), $sweep_hgb_hosts (HistGB)
+    - every other TTL above $sweep_cut: $sweep_xgb_rest (XGBoost), $sweep_hgb_rest (HistGB)
+  - So the all-feature models lean on which TTLs the testbed's attack machines used: the 39 other features, left untouched by the rewrite, detect $nottl_dr of attacks on their own (slide 15)
   - The other normal TTLs from the same training rule: $ttl_other
   - Source TTL is the top pro-attack feature for $fa_sttl_share of the $fa_count false alarms; $fa_host_share of them carry an attack-host TTL ($attack_ttls)
 - **Footnote:** feature-space simulation: recorded flows are edited, no traffic is regenerated; an attacker sets the initial TTL, while the TTL seen at a sensor also depends on the hop count. `ct_state_ttl`, which UNSW-NB15 derives from the connection state and both TTLs, is re-derived after every edit by a rule learned from the training file (it reproduces $ct_match of the test file's values), so every edited flow is one the feature extractor could produce
